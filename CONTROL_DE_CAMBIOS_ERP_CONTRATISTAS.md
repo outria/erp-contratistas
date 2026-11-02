@@ -58,3 +58,46 @@ Que se hizo desde F0, hallazgos, que se corrigio y que queda pendiente. Se actua
 - Estaciones de policia de Cucuta (MECUC, mas de una docena) como sedes EP con planta externa; origen de produccion configurable (planta propia, tercerizada, rancho de ERON).
 - Anexos 22, 23, 24 y 26 no disponibles (Osvaldo no los tiene).
 - Nutrifood (PAE Atlantico): grupos etarios y modalidades (RPS, industrializada, complemento AM/PM) cuando llegue la documentacion.
+
+## 2026-11-01 · Roles de direccion e intercambios de menu por sede (version 0.3.0, parte 4A)
+
+### Hecho
+- Migracion 007 (`20261107000000_roles_directores_intercambios_menu.sql`).
+- Director de compras recibe Planeacion: aprobar (plantilla y copias de cada empresa).
+- Roles nuevos de plantilla, copiados a las empresas existentes:
+  - Director de operaciones: Contratos V, Planeacion VA, WMS V, Distribucion VCA, Sede VCA, Calidad VCA, TH VC, Maestros V, Vehiculos VCA, Tableros V.
+  - Director de planeacion: Contratos V, Planeacion VCA, Compras V, WMS V, Sede V, Calidad V, Maestros VCA, Tableros V.
+- Proyeccion vs requerimiento:
+  - Una proyeccion la corre quien tenga Planeacion o Compras: ver.
+  - El requerimiento oficial exige Planeacion: crear, y se aprueba y envia a compras con Planeacion: aprobar. Al enviarlo sale aviso a Compras.
+  - Opcion de simular incluyendo intercambios propuestos.
+- Festivos de Colombia 2025-2026, dias habiles y ventanas de concertacion de menus:
+  - Inicial = 15 dias habiles desde el inicio del contrato; parametro `dias_habiles_ajuste_menu` por empresa. Para USPEC-CTO-199-2025: 1 al 23 de abril de 2025.
+  - Ademas, revisiones y oficios.
+- Intercambios de menu:
+  - Clases: concertado (indefinido), temporada (cosecha o escasez; exige fecha final), contingencia (paro, derrumbe; rige de inmediato aunque este propuesto) y especial (no aplica al refrigerio).
+  - Alcance: una sede o todo el contrato. Cambio de preparacion (pollo broaster -> guisado), de componente o de ingrediente (lenteja -> arveja, con factor de cantidad), por dia del ciclo o todos los dias.
+  - Estados: propuesto -> concertado -> aprobado por la entidad (o rechazado/anulado). Propone Planeacion o el administrador de sede; concerta quien tenga Planeacion o Sede: aprobar; aprueba entidad Planeacion: aprobar.
+  - Fuera de ventana: queda marcado y no se concerta sin oficio o soporte.
+- Notificaciones internas por modulo:
+  - Una contingencia avisa con urgencia a Planeacion y a Calidad (aviso a entidad e interventoria pendiente) y deja registrar cuando se aviso a cada una.
+  - Fuera de ventana avisa a Planeacion.
+- El menu del dia y la explosion leen ciclo oficial -> intercambios vigentes (sede gana a contrato; contingencia > temporada > especial > concertado; dia especifico gana a todos los dias; el mas reciente gana) -> intercambio puntual del dia.
+- Vista `v_intercambios` para la interventoria con las diferencias de cada sede frente a la minuta oficial.
+
+### Pruebas (local, transaccion revertida)
+- Semana 3-9 nov 2025, COCUC y Ocana.
+- Lenteja -> arveja concertado para todo el contrato: 788 kg pasan de lenteja a arveja. Sin oficio no deja concertar porque esta fuera de ventana.
+- Contingencia en Ocana el 5-nov, res sudada -> pierna de pollo:
+  - Solo cambia Ocana: la pierna sube 53 kg y COCUC sigue con res.
+  - Salen los tres avisos.
+- Temporada pechuga -> pierna x1,25 en COCUC, propuesta:
+  - La explosion oficial no la toma.
+  - La simulacion con propuestos si: pechuga 1.839 -> 165 kg y pierna 641 -> 2.733 kg.
+- Requerimiento convertido, aprobado y enviado; aviso en Compras. Semana completa de 6 sedes en 1,8 s.
+
+### Pendiente
+- 4B (con Fable): explosion por conjuntos (sin bucles, para meses y varias empresas), catalogo maestro por grupo, proyeccion consolidada multiempresa y calculo inverso consolidado.
+- 4C: pantallas de M2, incluida la de intercambios (ya aparece en el menu como "pronto").
+- Director administrativo: Osvaldo explicara sus funciones.
+- Equipos de compras por CEDI y razon social (Barranquilla: Jessy Gonzalez, Ana Rivadeneira, Richard; Bogota: Wilson Castro).

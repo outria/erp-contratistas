@@ -18,6 +18,7 @@ const MENU = [
   { h: '/minutas', t: 'Minutas y calendario', m: 'M2', pronto: true },
   { h: '/cupos', t: 'Cupos, dietas y novedades', m: 'M2', pronto: true },
   { h: '/explosion', t: 'Explosion de materiales', m: 'M2', pronto: true },
+  { h: '/intercambios', t: 'Intercambios de menu por sede', m: 'M2', pronto: true },
   { g: 'Compras' },
   { h: '/proveedores', t: 'Proveedores y homologacion', m: 'M3', pronto: true },
   { h: '/precios', t: 'Master de precios y ofertas', m: 'M3', pronto: true },
