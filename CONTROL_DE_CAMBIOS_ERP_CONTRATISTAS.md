@@ -101,3 +101,28 @@ Que se hizo desde F0, hallazgos, que se corrigio y que queda pendiente. Se actua
 - 4C: pantallas de M2, incluida la de intercambios (ya aparece en el menu como "pronto").
 - Director administrativo: Osvaldo explicara sus funciones.
 - Equipos de compras por CEDI y razon social (Barranquilla: Jessy Gonzalez, Ana Rivadeneira, Richard; Bogota: Wilson Castro).
+
+## 2026-11-02 · Familias de contrato, familias de intercambio y explosion por conjuntos (version 0.4.0, parte 4B-1, modelo Fable 5.1)
+
+### Hecho
+- Migracion 008 (`20261108000000_familias_modalidad_intercambio_explosion_conjuntos.sql`), aplicada en Supabase.
+- **Familias de contrato** (`plantillas_modalidad`): el esqueleto de cada modalidad (tiempos, componentes con su familia de intercambio, grupos de poblacion, variantes, reglas de rotacion, dias de atencion, avance del ciclo, uso de dietas). Seis plantillas: USPEC PPL (confirmada contra el Anexo 4 de Diestra), PAE (CAM, RPS, CPM, RI; grupos etarios 4-8, 9-13, 14-17; solo dias de clase; sin dietas), casinos de fuerzas, adulto mayor, ICBF primera infancia y bomberos (esqueletos por confirmar cuando llegue cada contrato). `aplicar_plantilla_modalidad(contrato)` crea lo que falte sin borrar nada; despues cada contrato se ajusta libremente.
+- **Familias de intercambio por contrato** (`familias_intercambio`, `familia_opciones`, `componentes.familia_id`): cada componente de cada tiempo apunta a su familia (el proteico del desayuno no es el del almuerzo). Para Diestra quedaron 12 familias con 153 opciones (29 en la minuta oficial, el resto del catalogo del Anexo 4) y subfamilias: proteico desayuno = huevo, queso, salchicha; proteico almuerzo/cena = res, pollo, cerdo, pescado; panificado = pan, arepa, calado, galleta, envuelto; tuberculo = papa, yuca, platano, ahuyama, name.
+- `sugerir_intercambios(sede, fecha, tiempo, componente)`: opciones de la familia ordenadas (vigentes primero, luego las que no rompen rotacion, las de minuta, la misma subfamilia), con veces usadas en la ventana de rotacion, ultima vez y bandera de rompe rotacion.
+- **Opciones extraordinarias en caliente** (`agregar_opcion_familia`): preparacion existente, producto existente o producto nuevo (el chorizo concertado con la PPL); si lo hace el administrador de sede queda propuesta y avisa a planeacion; si lo hace planeacion queda vigente. La receta nueva arranca con el gramaje de la minuta patron del componente. El producto nuevo queda marcado `pendiente_revision` y avisa a Maestros. `decidir_opcion_familia`: permanente, solo extraordinaria o retirar. Un intercambio con una preparacion que no estaba en la familia la agrega solo.
+- **Dietas estandarizadas** (`dieta_estandar`): la nutricionista fija que la gente en dieta recibe siempre tal preparacion por componente, por contrato o por una sola carcel, por dieta o para todas, por tiempo o para todos (huevo en desayuno, pechuga en almuerzo y cena). `dieta_equivalencias` ahora tambien por sede. Se arranca con todas las dietas del contrato y se estandariza despues del tamizaje.
+- La poblacion en dieta siempre va por grupo (H/M o etario): si el contrato tiene un solo grupo se asigna solo; si tiene varios y no se indica, se rechaza (antes se ignoraba en la linea y se duplicaba en la explosion).
+- **Explosion por conjuntos**: `calcular_explosion` ya no recorre fila por fila; arma sede x dia x menu x poblacion en tablas temporales y hace dos inserciones (linea y dietas). Mismo resultado que la version anterior (3.100 filas, 36.757 raciones en la semana de prueba) en 0,5 s; 90 dias x 6 sedes con dietas = 34.758 filas en 4,6 s local y dentro del limite en Supabase. Admite calcular por tramos (`p_desde`, `p_hasta`) para que la pantalla parta proyecciones de varios meses.
+- `dia_ciclo` sin bucle dia a dia para PAE (cuenta los dias de clase con una sola consulta).
+
+### Pruebas (local, transaccion revertida, y verificacion en produccion)
+- Lenteja -> arveja en todo el contrato, contingencia en Ocana, 250 PPL en dieta hiperproteica con +10 %: mismos numeros que la version por bucles.
+- Dieta estandarizada en COCUC: toda la poblacion en dieta sale con huevos revueltos en desayuno y pechuga asada en almuerzo y cena; la regla por tiempo gana a la general.
+- Sugerencias para el proteico del almuerzo del 5-nov en COCUC (res sudada): 18 opciones; res dorada, al pimenton, asada, encebollada y sobrebarriga primero (misma subfamilia, no rompen rotacion); res sudada marcada como actual y repetida 3 veces en la ventana.
+- Chorizo creado en caliente desde un intercambio de contingencia en Ocana: receta con 114 g de arranque, producto pendiente de revision, aviso a Maestros, y la explosion ya lo pide (393 raciones).
+- Plantilla PAE aplicada a un contrato de prueba de Nutrifood: 4 tiempos, 18 componentes con familia, 3 grupos etarios, calendario propio, ciclo de 20.
+
+### Pendiente
+- 4B-2: catalogo maestro por grupo (producto maestro al que apuntan los productos de cada empresa, con mapeo sugerido para aprobar) y proyeccion consolidada multiempresa con calculo inverso consolidado.
+- 4C: pantallas de M2, en especial la programacion multisemana (semanas -1, 0, +1, +2 y "agregar semana") con el intercambio desde la celda usando `sugerir_intercambios`.
+- Confirmar las plantillas de PAE, casinos, adulto mayor, ICBF y bomberos contra los anexos reales cuando lleguen.
