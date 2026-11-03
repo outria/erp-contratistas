@@ -126,3 +126,29 @@ Que se hizo desde F0, hallazgos, que se corrigio y que queda pendiente. Se actua
 - 4B-2: catalogo maestro por grupo (producto maestro al que apuntan los productos de cada empresa, con mapeo sugerido para aprobar) y proyeccion consolidada multiempresa con calculo inverso consolidado.
 - 4C: pantallas de M2, en especial la programacion multisemana (semanas -1, 0, +1, +2 y "agregar semana") con el intercambio desde la celda usando `sugerir_intercambios`.
 - Confirmar las plantillas de PAE, casinos, adulto mayor, ICBF y bomberos contra los anexos reales cuando lleguen.
+
+## 2026-11-02 · Catalogo maestro, proyeccion consolidada y primera auditoria (version 0.5.0, partes 4B-2 y correcciones)
+
+### Hecho
+- Migracion 009: catalogo maestro por grupo (`productos_maestros`, mapeo sugerido por parecido de nombre con pg_trgm, aprobar o rechazar; productos nuevos reciben sugerencia al crearse; dos productos de la misma empresa nunca se funden solos), proyeccion consolidada multiempresa (`crear_proyeccion_consolidada`, `calcular_proyeccion_consolidada`, `resumen_proyeccion_consolidada` por maestro con aporte por empresa y contrato) y calculo inverso consolidado (contenedor).
+- Protocolo de auditoria (`docs/PROTOCOLO_AUDITORIA.md`) y reglas del frontend para un refresh visual facil.
+- Primera auditoria independiente de M2 (migraciones 006 a 009): 2 criticos, 7 altos, 5 medios, 4 bajos. Migracion 010 corrige todos los criticos y altos y tres medios:
+  - C1 aislamiento entre empresas: trigger de coherencia de empresa en 29 tablas (contrato, sede, receta, producto, ciclo... deben ser de la misma empresa de la fila) y funciones de lectura (menu del dia, poblacion, ventana, sustitucion, alertas) como SECURITY INVOKER para que respeten el RLS.
+  - C2 atajo de administrador: `auth.uid() is null` reemplazado por `es_admin_sql()` (solo editor SQL o service_role; nunca anon ni authenticated por la API) en todas las funciones; ejecucion revocada a public y anon en todas las funciones y por defecto en las nuevas. Verificado en produccion: 0 atajos viejos, 0 funciones ejecutables por anon.
+  - A1 un parte diario parcial ya no borra los demas grupos (el parte gana al cupo en su mismo grupo, variante y tiempo).
+  - A2 cupos y partes por tiempo de comida (necesario para PAE: cada estudiante recibe un solo tiempo).
+  - A3 dietas: nunca superan la poblacion del grupo (se prorratean); reglas con prioridad contrato > empresa > catalogo; una regla inactiva del contrato anula la del catalogo; las reglas de otra empresa ya no se aplican.
+  - A4 intercambios: clase, alcance e inicio no se cambian por edicion; el administrador de sede solo propone y concerta para su sede; orden de estados obligatorio (propuesto, concertado, aprobado por la entidad).
+  - A5 explosiones y consolidadas guardan los tramos calculados; quedan "parcial" hasta cubrir todo el periodo y el calculo inverso consolidado exige que esten completas.
+  - A6 dias habiles y calendario propio excluyen festivos; festivos de Colombia generados por ley (Emiliani + Pascua) de 2024 a 2035.
+  - A7 rendimiento: sin bitacora por fila en el detalle de la explosion, crudo efectivo en SQL integrable, raciones por tramo, RLS del detalle evaluado una sola vez, calculo por tramos de fechas y de sedes. Caso pesado del auditor (90 dias, 6 sedes, 4 dietas por sede, 149.364 filas): 11 s completo, 5 s por mes; la pantalla calcula por tramos de 15 dias.
+  - M1 bloqueo al recalcular, M3 mapeo maestro solo del mismo grupo y unidad (lo sugerido no suma hasta aprobarse), M5 fechas por defecto en hora de Bogota.
+- Regresion: la semana de prueba da exactamente lo mismo que antes de las correcciones (3.100 filas, 70.396 kg).
+
+### Pendiente de la auditoria (medios y bajos)
+- Reglas de dieta `tiempo_adicional` (hipoglucida y gestantes con 6 tiempos) y `metodo_prohibido`: falta definir con Osvaldo que se sirve en los tiempos adicionales.
+- Bordes de intercambios: cambio de componente sin preparacion nueva; sustitucion de ingrediente por ciclo; intercambio especial de ingrediente sin tiempo que alcanza el refrigerio; intercambio de dia 1 que alcanza el ciclo alterno de festivos.
+- Unificar `menu_excepciones` tipo intercambio con `intercambios_menu`; calculo inverso por contrato sin explosiones temporales.
+- `raciones` cuenta personas-dia (renombrar o agregar tiempos servidos); borrar familias con anular; validar recetas contra la minuta patron.
+- PAE con cientos de colegios: calculo asincrono (pg_cron o funcion con service_role) en vez de tramos desde la pantalla.
+- Frontend (antes de la 4C): tokens con nombres semanticos (hoy `--cafe`, `--naranja` heredados de A2 PAN), quitar estilos en linea y colores fijos, `ESTADOS` de panaderia en `ui.js`, aplicar `color_primario`/`color_acento` de la empresa, componentes `Tabla` y `Campo`.

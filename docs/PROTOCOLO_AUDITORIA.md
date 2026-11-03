@@ -24,7 +24,10 @@ Reglas para que cambiar la cara de la aplicacion sea cambiar pocos archivos:
 - **Datos** por funciones RPC o vistas de la base; las paginas no arman logica de negocio en el navegador.
 - Marca por empresa: `empresas.color_primario`, `color_acento` y `logo_url` alimentan los tokens al entrar a la empresa.
 
+## Regla para funciones nuevas
+El atajo de administrador SQL es `public.es_admin_sql()`; nunca `auth.uid() is null` (anon tambien tiene uid nulo). Toda funcion nueva se revoca a public y anon y se concede a authenticated (ya es el privilegio por defecto del esquema).
+
 ## Historial
 | Fecha | Alcance | Resultado |
 |---|---|---|
-| 2026-11-02 | M2 Planeacion backend (mig 006 a 009) y frontend actual | En curso |
+| 2026-11-02 | M2 Planeacion backend (mig 006 a 009) y frontend actual | 2 criticos, 7 altos, 5 medios, 4 bajos. Criticos, altos y 3 medios corregidos en mig 010 (v0.5.0); el resto en el pendiente del control de cambios. |
