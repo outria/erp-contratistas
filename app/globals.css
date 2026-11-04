@@ -250,3 +250,11 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
   .prg-tabla { grid-template-columns: 96px repeat(7, minmax(104px, 1fr)); min-width: 840px; }
   .prg-sede { font-size: 12px; }
 }
+
+/* ---- Cupos y dietas ---- */
+.crece { flex: 1 1 auto; }
+.t-cupos th.n { white-space: normal; font-size: 12px; min-width: 70px; }
+.t-cupos tr.sin-cupos td { color: var(--suave); }
+.t tr.fila-error td { background: var(--bad-bg); }
+.grid-cupos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 10px 0; }
+input.cambiado { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento-suave); }
