@@ -60,8 +60,9 @@ export function TablaCupos({ datos, filtro, onEditar, puedeEditar, unidad }) {
             const k = (g) => `${g.id}|${f.tiempo?.id ?? ''}`;
             const fila = grupos.map((g) => f.m.get(k(g)));
             const total = fila.reduce((s, v) => s + (v?.cantidad ?? 0), 0);
-            const desde = fila.find((v) => v?.desde)?.desde;
-            const fuente = fila.find((v) => v?.fuente)?.fuente;
+            const ultimo = fila.filter((v) => v?.desde).sort((a, b) => (a.desde < b.desde ? 1 : -1))[0];   // la vigencia mas reciente de la fila
+            const desde = ultimo?.desde;
+            const fuente = ultimo?.fuente;
             return (
               <tr key={`${f.sede.id}|${f.tiempo?.id ?? ''}`} className={total === 0 ? 'sin-cupos' : ''}>
                 <td>{f.primera ? <><b>{f.sede.nombre}</b><div className="small muted">{f.sede.ciudad}{f.sede.cupos_referencia ? ` · ref. ${num(f.sede.cupos_referencia)}` : ''}{f.sede.parte_hoy != null ? <> · parte de hoy <b>{num(f.sede.parte_hoy)}</b></> : null}</div></> : null}</td>
