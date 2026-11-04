@@ -44,12 +44,12 @@ const ESTADOS = {
   // intercambios y novedades
   propuesto: 'warn', propuesta: 'warn', concertado: 'info', aprobado_entidad: 'ok', rechazado: 'bad', vencido: '', retirada: 'bad',
   // explosiones y requerimientos
-  parcial: 'warn', calculada: 'info', aprobada: 'ok', aprobado: 'ok', enviada_compras: 'ok',
+  parcial: 'warn', calculada: 'info', calculando: 'warn', aprobada: 'ok', aprobado: 'ok', enviada_compras: 'ok',
   // mapeo maestro
   sugerido: 'warn',
 };
 const NOMBRES = {
-  aprobado_entidad: 'aprobada por la entidad', enviada_compras: 'enviada a compras', retirada: 'retirada', parcial: 'parcial (faltan tramos)', calculada: 'calculada',
+  aprobado_entidad: 'aprobada por la entidad', enviada_compras: 'enviada a compras', retirada: 'retirada', parcial: 'parcial (faltan tramos)', calculada: 'calculada', calculando: 'calculando…',
   propuesto: 'propuesto', concertado: 'concertado', rechazado: 'rechazado', sugerido: 'sugerido, por aprobar',
 };
 export function Estado({ e }) {
