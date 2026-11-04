@@ -222,4 +222,13 @@ Osvaldo no tiene a la mano la focalizacion PAE, los partes de guardia ni la BD d
 ### Pendiente
 - Partes diarios (parte de guardia dia a dia) desde la pantalla: hoy solo por SQL o importacion; la tabla ya existe y `poblacion_dia` la prioriza sobre los cupos.
 - Grupos etarios y gramajes por grupo desde Minutas y calendario.
-- Explosion con presets (8/15/30/90 dias), catalogo maestro y consolidada en pantalla.
+- Catalogo maestro y proyeccion consolidada en pantalla.
+
+### 2026-11-04 (tarde) · Pantalla de Explosion de materiales (migracion 020, version 0.7.1)
+- `/explosion` (menu M2/M3): lista de proyecciones y requerimientos del contrato (codigo, periodo, sedes, raciones, productos, estado, quien la creo) y **Nueva proyeccion** con presets de 8, 15, 30 y 90 dias o rango, todas las sedes o una seleccion, con o sin dietas, con o sin intercambios propuestos.
+- **Calculo por tramos desde el navegador**: el tamano del tramo sale de un presupuesto de 160 sede-dias por llamada (USPEC con 4 tiempos y dietas pesa unas 3 veces mas por sede-dia que PAE); si una llamada se pasa del limite de 8 s de Supabase, el tramo se parte a la mitad y se reintenta. Barra de avance; una proyeccion a medias queda "parcial" y se completa con Recalcular. Probado en produccion: Demo USPEC 12 establecimientos x 30 dias = 327.120 raciones, 112 productos.
+- Detalle: KPIs (raciones, productos, periodo, dias con servicio, sede-dias sin receta), raciones por tiempo de comida, pestanas **Productos** (a comprar en unidad de compra, promedio por dia, linea y dietas por separado, dias; filtro por categoria y busqueda), **Por sede**, **Por dia** (barras) y **Alertas** (sedes sin ciclo, sin cupos, dias sin receta). Detalle por producto: en que preparaciones (crudo por racion, raciones, ajustes de dieta o intercambio), por sede y por dia. Descargar Excel (productos, raciones por sede y por dia).
+- Flujo de requerimiento desde la misma pantalla: convertir en requerimiento (M2 crear), aprobar y enviar a compras (M2 aprobar, deja aviso en M3), anular (queda para trazabilidad, `anular_explosion`).
+- Funciones nuevas: `explosion_resumen`, `explosion_producto`, `explosiones_contrato`, `anular_explosion`, `puede_ver_explosion`; indice `explosion_detalle (explosion_id, producto_id)`.
+- **Hallazgo propio corregido**: las raciones del tramo en PAE tomaban el maximo por tiempo y no la suma de las poblaciones (grupo x tiempo); una explosion de 34 colegios marcaba 6.332 raciones-dia en vez de 28.525. Los kilos no estaban afectados (salen fila a fila), solo el contador de raciones.
+- Pendiente: presupuesto en pesos (llega con el master de precios, M3); comparar dos proyecciones; explosion desde la programacion con un clic.
