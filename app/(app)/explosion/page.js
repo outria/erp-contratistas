@@ -33,18 +33,27 @@ export default function Explosion() {
   const lista = useCarga(async () => contratoId ? q(sb().rpc('explosiones_contrato', { p_contrato: contratoId })) : null, [contratoId, progreso?.fin]);
   const sedes = useCarga(async () => contratoId ? q(sb().from('contrato_sedes').select('id, sedes(nombre)').eq('contrato_id', contratoId).eq('estado', 'activa')).then((r) => r.map((x) => ({ id: x.id, nombre: x.sedes?.nombre ?? '·' })).sort((a, b) => a.nombre.localeCompare(b.nombre))) : [], [contratoId]);
 
-  // calculo por tramos: tamano segun el numero de sedes para que cada llamada quede lejos del limite
+  // calculo por tramos: el tamano sale de un presupuesto de sede-dias por llamada (USPEC con 4 tiempos y dietas pesa mas
+  // que PAE); si una llamada se pasa del limite de Supabase se parte el tramo a la mitad y se reintenta.
   const calcular = async (expId, desde, hasta, nSedes) => {
-    const porTramo = Math.max(1, Math.min(30, Math.floor(420 / Math.max(1, nSedes))));
-    const tramos = [];
-    for (let d = desde; d <= hasta; d = sumar(d, porTramo)) tramos.push([d, sumar(d, porTramo - 1) < hasta ? sumar(d, porTramo - 1) : hasta]);
-    setProgreso({ id: expId, hechos: 0, total: tramos.length, texto: 'Calculando…' });
+    let porTramo = Math.max(1, Math.min(30, Math.floor(160 / Math.max(1, nSedes))));
+    const totalDias = Math.round((desdeISO(hasta) - desdeISO(desde)) / 86400000) + 1;
+    let d = desde, hechos = 0, n = 0;
+    setProgreso({ id: expId, hechos: 0, total: totalDias, texto: 'Calculando…' });
     try {
-      for (let i = 0; i < tramos.length; i++) {
-        await q(sb().rpc('calcular_explosion', { p_explosion: expId, p_desde: tramos[i][0], p_hasta: tramos[i][1], p_sedes: null }));
-        setProgreso({ id: expId, hechos: i + 1, total: tramos.length, texto: `Tramo ${i + 1} de ${tramos.length}: ${fechaCorta(tramos[i][0])} a ${fechaCorta(tramos[i][1])}` });
+      while (d <= hasta) {
+        const fin = sumar(d, porTramo - 1) < hasta ? sumar(d, porTramo - 1) : hasta;
+        try {
+          await q(sb().rpc('calcular_explosion', { p_explosion: expId, p_desde: d, p_hasta: fin, p_sedes: null }));
+        } catch (e) {
+          if (porTramo > 1 && /tard|timeout|statement/i.test(e.message)) { porTramo = Math.max(1, Math.floor(porTramo / 2)); continue; }
+          throw e;
+        }
+        hechos += Math.round((desdeISO(fin) - desdeISO(d)) / 86400000) + 1; n += 1;
+        setProgreso({ id: expId, hechos, total: totalDias, texto: `Calculado hasta el ${fechaCorta(fin)} (${n} ${n === 1 ? 'tramo' : 'tramos'})` });
+        d = sumar(fin, 1);
       }
-      setProgreso({ id: expId, hechos: tramos.length, total: tramos.length, fin: Date.now() });
+      setProgreso({ id: expId, hechos: totalDias, total: totalDias, fin: Date.now() });
     } catch (e) {
       setMsg({ ok: false, t: `El calculo quedo parcial: ${e.message}. Puede recalcular los tramos que faltan.` });
       setProgreso({ id: expId, hechos: 0, total: 0, fin: Date.now() });
