@@ -192,3 +192,12 @@ Pedido de Osvaldo al ver la pantalla: con un PAE de 147 colegios no se puede ver
 - **Gramajes por componente**: debajo de cada preparacion, el servido de la minuta patron y el crudo del ingrediente principal por racion, por grupo de poblacion (H/M en USPEC, grupos etarios en PAE); si todos los grupos son iguales se muestra una vez.
 - En una fila agrupada, el panel pide a que sede se le registra el cambio o la novedad (o todo el contrato).
 - Hallazgo propio: los cupos por tiempo tomaban un solo grupo etario; corregido en la 015 (RPS 1.700, CAM 851...).
+
+### 2026-11-03 (noche) · Correcciones sobre la revision de Osvaldo (migracion 016, version 0.6.3)
+- **Error "UPDATE requires a WHERE clause"** al apagar "agrupar sedes": la rama sin agrupacion actualizaba una tabla temporal sin `where`; Supabase lo bloquea para el rol autenticado. Corregido (`where true`). Regla para funciones nuevas: todo `update`/`delete`, incluso sobre temporales, lleva `where`.
+- **Celda completa cuando la sede tiene una sola modalidad**: en la practica cada colegio atiende casi siempre una modalidad (RPS o RI). Si en el dia solo hay un tiempo con cupos, la celda muestra todos los componentes de ese tiempo (proteico, cereal, tuberculo, verdura, leguminosa, bebida, fruta); si la sede combina varias modalidades (RPS + CAM + CPM), queda el modo compacto de un componente principal por tiempo y el detalle en el panel del dia. En el panel, los tiempos sin cupos salen plegados.
+- **Agrupacion por tiempos servidos**: la firma que junta sedes en una fila incluye ahora que tiempos tienen cupos ese dia; dos colegios con el mismo ciclo pero una con RPS y otra con RI ya no se mezclan.
+- Demo PAE ajustada a la realidad: IE Tecnica y Megacolegio solo RPS, IE Rural solo RI, IE Normal RPS + CAM + CPM.
+- Plantilla Excel entregada a Osvaldo para recoger la cobertura: USPEC (PPL por establecimiento, hombres y mujeres, poblacion por dieta terapeutica y sexo) y PAE (estudiantes por colegio, modalidad y grupo etario), mas casinos y otros por sede y tiempo. El modelo ya los recibe (`cupos_contrato` por grupo y tiempo, `dietas_poblacion` por grupo y dieta, `partes_diarios`); falta la pantalla de Cupos, dietas y novedades para cargarlos sin SQL y el importador desde Excel.
+
+Pendiente que se agrega: pantalla de Cupos y dietas con importador Excel (prioridad alta, es lo que destraba la explosion real); grupos etarios por contrato parametrizables desde Minutas y calendario.
