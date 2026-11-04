@@ -115,8 +115,14 @@ export function PanelDia({ sede, fecha, celda, datos, fila, sedesMap, unidad = '
                       {i.origen !== 'ciclo' && <div className={`origen${i.estado === 'propuesto' ? ' propuesto' : ''}`}>{CLASES_INTERCAMBIO[i.clase] ?? 'intercambio'}{i.estado ? ` · ${i.estado.replace(/_/g, ' ')}` : ''}</div>}
                       {i.gramaje?.grupos && (
                         <span className="gramaje" title={`Servido = minuta patron; crudo = ${i.gramaje.producto ?? 'ingrediente principal'} por racion`}>
-                          {grupos.map((g) => { const x = i.gramaje.grupos[g.codigo]; if (!x || (x.servido == null && x.crudo == null)) return null;
-                            return <span key={g.codigo}>{grupos.length > 1 ? `${g.codigo}: ` : ''}{x.servido ? <b>{fmtG(x.servido)}</b> : null}{x.servido && x.crudo != null ? ' · ' : ''}{x.crudo != null ? `crudo ${x.crudo} g` : ''}{'  '}</span>; })}
+                          {(() => {
+                            const vals = grupos.map((g) => ({ g: g.codigo, ...(i.gramaje.grupos[g.codigo] ?? {}) })).filter((x) => x.servido != null || x.crudo != null);
+                            if (!vals.length) return null;
+                            const txt = (x) => `${x.servido ? 'servido ' + fmtG(x.servido) : ''}${x.servido && x.crudo != null ? ' · ' : ''}${x.crudo != null ? 'crudo ' + x.crudo + ' g' : ''}`;
+                            const iguales = vals.every((x) => txt(x) === txt(vals[0]));
+                            if (iguales) return <span>{txt(vals[0])}{grupos.length > 1 ? ' (todos los grupos)' : ''}</span>;
+                            return vals.map((x) => <span key={x.g}><b>{x.g}</b> {txt(x)}{'   '}</span>);
+                          })()}
                         </span>)}
                     </span>
                     <span className="row gap4 nowrap">

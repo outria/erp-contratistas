@@ -53,11 +53,13 @@ begin
   create temp table if not exists tmp_prg_pob (sede_id uuid, fecha date, total int, dieta int, por_tiempo jsonb) on commit drop;
   truncate tmp_prg_pob;
   insert into tmp_prg_pob
-  select d.sede_id, d.fecha, sum(p.total)::int, sum(p.en_dieta)::int,
-         jsonb_object_agg(coalesce(t.codigo, '_'), p.total) filter (where p.tiempo_comida_id is not null)
-    from tmp_prg_dias d cross join lateral public.poblacion_dia(d.sede_id, d.fecha) p
-    left join public.tiempos_comida t on t.id = p.tiempo_comida_id
-   where d.dia is not null group by 1, 2;
+  select x.sede_id, x.fecha, sum(x.total)::int, sum(x.dieta)::int,
+         jsonb_object_agg(x.tcod, x.total) filter (where x.tcod is not null)
+    from (select d.sede_id, d.fecha, t.codigo as tcod, sum(p.total) as total, sum(p.en_dieta) as dieta
+            from tmp_prg_dias d cross join lateral public.poblacion_dia(d.sede_id, d.fecha) p
+            left join public.tiempos_comida t on t.id = p.tiempo_comida_id
+           where d.dia is not null group by 1, 2, 3) x
+   group by 1, 2;
   create index if not exists tmp_prg_pob_idx on tmp_prg_pob (sede_id, fecha);
 
   -- gramajes por componente y preparacion: servido de la minuta y crudo del ingrediente principal, por grupo de poblacion
