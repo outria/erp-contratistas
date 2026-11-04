@@ -59,7 +59,9 @@ export default function Cupos() {
       const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
       const hoja = elegirHoja(wb.SheetNames, tipo, contrato?.modalidad);
       const matriz = XLSX.utils.sheet_to_json(wb.Sheets[hoja], { header: 1, raw: true, defval: null });
-      const r = filasDesdeHoja(matriz, tipo);
+      const r0 = filasDesdeHoja(matriz, 'cupos');
+      tipo = r0.columnas?.dieta != null ? 'dietas' : 'cupos';   // el archivo manda: si trae columna de dieta, son dietas
+      const r = tipo === 'dietas' ? filasDesdeHoja(matriz, 'dietas') : r0;
       if (r.error) { setImp({ tipo, archivo: file.name, hoja, hojas: wb.SheetNames, error: r.error, wb }); return; }
       const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: tipo, p_filas: r.filas, p_desde: fecha, p_fuente: file.name, p_aplicar: false }));
       setImp({ tipo, archivo: file.name, hoja, hojas: wb.SheetNames, filas: r.filas, prev, wb, desde: fecha });
@@ -68,10 +70,12 @@ export default function Cupos() {
   const cambiarHoja = async (hoja) => {
     const XLSX = await import('xlsx');
     const matriz = XLSX.utils.sheet_to_json(imp.wb.Sheets[hoja], { header: 1, raw: true, defval: null });
-    const r = filasDesdeHoja(matriz, imp.tipo);
-    if (r.error) { setImp({ ...imp, hoja, error: r.error, filas: null, prev: null }); return; }
-    const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: imp.tipo, p_filas: r.filas, p_desde: imp.desde, p_fuente: imp.archivo, p_aplicar: false }));
-    setImp({ ...imp, hoja, error: null, filas: r.filas, prev });
+    const r0 = filasDesdeHoja(matriz, 'cupos');
+    const tipo = r0.columnas?.dieta != null ? 'dietas' : 'cupos';
+    const r = tipo === 'dietas' ? filasDesdeHoja(matriz, 'dietas') : r0;
+    if (r.error) { setImp({ ...imp, hoja, tipo, error: r.error, filas: null, prev: null }); return; }
+    const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: tipo, p_filas: r.filas, p_desde: imp.desde, p_fuente: imp.archivo, p_aplicar: false }));
+    setImp({ ...imp, hoja, tipo, error: null, filas: r.filas, prev });
   };
   const aplicar = async () => {
     setGuardando(true); setMsg(null);
