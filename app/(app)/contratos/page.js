@@ -90,14 +90,14 @@ function NuevoContrato({ onCerrar, onListo }) {
         </div>
         <div className="grid g2">
           {nuevaEnt ? (
-            <div className="row" style={{ alignItems: 'flex-end' }}>
+            <div className="row abajo">
               <label className="campo" style={{ flex: 2 }}>Entidad nueva<input value={nuevaEnt.nombre} onChange={(e) => setNuevaEnt({ ...nuevaEnt, nombre: e.target.value })} placeholder="Alcaldia de Soledad" /></label>
               <label className="campo">Tipo<select value={nuevaEnt.tipo} onChange={(e) => setNuevaEnt({ ...nuevaEnt, tipo: e.target.value })}>{Object.entries(TIPOS_ENTIDAD).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
               <button type="button" className="btn" onClick={() => setNuevaEnt(null)}>Cancelar</button>
             </div>
           ) : (
-            <div className="row" style={{ alignItems: 'flex-end' }}>
-              <label className="campo" style={{ flex: 1 }}>Entidad contratante
+            <div className="row abajo">
+              <label className="campo flex1">Entidad contratante
                 <select value={f.entidad_id} onChange={set('entidad_id')}><option value="">Escoja…</option>{(ents.datos ?? []).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select>
               </label>
               <button type="button" className="btn" onClick={() => setNuevaEnt({ nombre: '', tipo: 'alcaldia' })}>＋ Entidad</button>
@@ -124,7 +124,7 @@ function NuevoContrato({ onCerrar, onListo }) {
           <label className="campo" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 22 }}><input type="checkbox" checked={f.incluye_iva} onChange={set('incluye_iva')} /> El valor incluye IVA</label>
         </div>
         {err && <div className="aviso bad">{err}</div>}
-        <div className="row" style={{ justifyContent: 'flex-end' }}>
+        <div className="row end">
           <button type="button" className="btn" onClick={onCerrar}>Cancelar</button>
           <button className="btn btn-p" disabled={ocupado}>{ocupado ? 'Guardando…' : 'Crear contrato'}</button>
         </div>

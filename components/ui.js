@@ -17,7 +17,7 @@ export function Encabezado({ titulo, sub, children }) {
 export function Kpi({ v, l, d = 0, sufijo }) {
   return (
     <div className="card kpi">
-      <span className="v">{typeof v === 'number' ? num(v, d) : v}{sufijo ? <small className="muted" style={{ fontSize: 14 }}> {sufijo}</small> : null}</span>
+      <span className="v">{typeof v === 'number' ? num(v, d) : v}{sufijo ? <small className="muted"> {sufijo}</small> : null}</span>
       <span className="l">{l}</span>
     </div>
   );
@@ -27,7 +27,7 @@ export function Barra({ valor, meta, etiqueta, de = 'de la meta', tope = 1.05 })
   const pct = meta ? Math.min(100, (valor / meta) * 100) : 0;
   const clase = !meta ? '' : valor > meta * tope ? 'bad' : valor >= meta * 0.95 ? 'ok' : '';
   return (
-    <div className="stack" style={{ gap: 4 }}>
+    <div className="stack gap4">
       <div className="row between small">
         <span>{etiqueta}</span>
         <span className="muted">{meta ? `${num((valor / meta) * 100)} % ${de}` : 'sin meta'}</span>
@@ -37,15 +37,72 @@ export function Barra({ valor, meta, etiqueta, de = 'de la meta', tope = 1.05 })
   );
 }
 
+// Estados del dominio de Supply ERP (contratos, planeacion, intercambios, explosiones, proveedores...)
 const ESTADOS = {
-  borrador: '', aprobado: 'info', aprobada: 'info', programado: 'info', producido: 'ok', despachado: 'ok', entregado: 'ok', pendiente: 'warn', leyendo: 'warn', leida: 'info', creada: 'ok', descartada: 'bad', error: 'bad', anulado: 'bad', anulada: 'bad',
-  planeada: '', en_proceso: 'warn', cerrada: 'ok', planeado: '', pesado: 'warn', mojado: 'warn', horneado: 'warn',
-  formado: 'warn', fermentado: 'warn', empacado: 'ok', liberado: 'ok', arrastrado: 'warn', por_aprobar: 'warn', devuelto: 'bad', produce: 'ok', no_produce: 'bad', preparado_sitio: 'warn', otro_componente: '', por_revisar: 'warn',
-  activo: 'ok', fuera_de_servicio: 'warn', vigente: 'ok',
+  // generales
+  borrador: '', activo: 'ok', activa: 'ok', vigente: 'ok', inactivo: 'warn', inactiva: 'warn', suspendido: 'warn', suspendida: 'warn', anulado: 'bad', anulada: 'bad', liquidado: 'info', terminado: 'info', pendiente: 'warn',
+  // intercambios y novedades
+  propuesto: 'warn', propuesta: 'warn', concertado: 'info', aprobado_entidad: 'ok', rechazado: 'bad', vencido: '', retirada: 'bad',
+  // explosiones y requerimientos
+  parcial: 'warn', calculada: 'info', aprobada: 'ok', aprobado: 'ok', enviada_compras: 'ok',
+  // mapeo maestro
+  sugerido: 'warn',
 };
-const NOMBRES = { en_proceso: 'en proceso', por_aprobar: 'por aprobar', no_produce: 'no producimos', produce: 'producimos', preparado_sitio: 'en sitio', otro_componente: 'otro componente', por_revisar: 'por revisar', fuera_de_servicio: 'fuera de servicio', leida: 'leída, por revisar', creada: 'pedido creado', leyendo: 'leyendo con IA' };
+const NOMBRES = {
+  aprobado_entidad: 'aprobada por la entidad', enviada_compras: 'enviada a compras', retirada: 'retirada', parcial: 'parcial (faltan tramos)', calculada: 'calculada',
+  propuesto: 'propuesto', concertado: 'concertado', rechazado: 'rechazado', sugerido: 'sugerido, por aprobar',
+};
 export function Estado({ e }) {
-  return <span className={`chip ${ESTADOS[e] ?? ''}`}>{NOMBRES[e] ?? e}</span>;
+  return <span className={`chip ${ESTADOS[e] ?? ''}`}>{NOMBRES[e] ?? String(e ?? '').replace(/_/g, ' ')}</span>;
+}
+
+// Campo de formulario: etiqueta arriba, control abajo. <Campo l="Nombre" req><input .../></Campo>
+export function Campo({ l, req = false, ayuda, children, className = '' }) {
+  return (
+    <label className={`campo ${className}`}>
+      <span>{l}{req && <span className="req"> *</span>}{ayuda && <Info>{ayuda}</Info>}</span>
+      {children}
+    </label>
+  );
+}
+
+// Tabla: columnas [{k, t, n (numerica), r (render)}], filas con id. Envuelta en scroll horizontal.
+export function Tabla({ cols, filas, idKey = 'id', vacio = 'Sin datos', pie, onFila, selId, grande = false }) {
+  return (
+    <div className="scroll">
+      <table className={`t${grande ? ' t-grande' : ''}`}>
+        <thead><tr>{cols.map((c) => <th key={c.k ?? c.t} className={c.n ? 'n' : ''}>{c.t}</th>)}</tr></thead>
+        <tbody>
+          {(!filas || filas.length === 0) ? <tr><td colSpan={cols.length} className="vacio">{vacio}</td></tr> :
+            filas.map((f, i) => (
+              <tr key={f[idKey] ?? i} className={selId != null && f[idKey] === selId ? 'sel' : ''} onClick={onFila ? () => onFila(f) : undefined} style={onFila ? { cursor: 'pointer' } : undefined}>
+                {cols.map((c) => <td key={c.k ?? c.t} className={c.n ? 'n' : ''}>{c.r ? c.r(f) : c.n && typeof f[c.k] === 'number' ? num(f[c.k], c.d ?? 0) : f[c.k] ?? '·'}</td>)}
+              </tr>))}
+        </tbody>
+        {pie && <tfoot><tr>{cols.map((c) => <td key={c.k ?? c.t} className={c.n ? 'n' : ''}>{pie[c.k] ?? ''}</td>)}</tr></tfoot>}
+      </table>
+    </div>
+  );
+}
+
+// Panel lateral deslizante (detalle de una celda, formulario largo) que no tapa toda la pantalla
+export function Panel({ titulo, sub, onCerrar, children, acciones }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onCerrar?.(); };
+    document.addEventListener('keydown', esc); return () => document.removeEventListener('keydown', esc);
+  }, [onCerrar]);
+  return (
+    <>
+      <div className="panel-fondo" onClick={onCerrar} />
+      <aside className="panel-lateral" role="dialog" aria-label={titulo}>
+        <header>
+          <div><h2 className="m0">{titulo}</h2>{sub && <div className="small muted">{sub}</div>}</div>
+          <div className="row gap6">{acciones}<button className="btn btn-s" onClick={onCerrar} aria-label="Cerrar">✕</button></div>
+        </header>
+        <div className="cuerpo">{children}</div>
+      </aside>
+    </>
+  );
 }
 
 export function Cargando({ texto = 'Cargando…' }) {
@@ -63,8 +120,8 @@ export function Modal({ titulo, onCerrar, children, ancho = false }) {
   return (
     <div className="modal-fondo" onClick={onCerrar}>
       <div className={`modal${ancho ? ' ancho' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div className="row between" style={{ marginBottom: 12 }}>
-          <h2 style={{ margin: 0 }}>{titulo}</h2>
+        <div className="row between mb12">
+          <h2 className="m0">{titulo}</h2>
           <button className="btn" onClick={onCerrar} aria-label="Cerrar">✕</button>
         </div>
         {children}

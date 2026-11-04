@@ -26,13 +26,13 @@ export default function DetalleContrato() {
         <Estado e={c.estado} />
         <Link href="/contratos" className="btn">← Contratos</Link>
       </Encabezado>
-      <div className="grid g4" style={{ marginBottom: 16 }}>
+      <div className="grid g4 mb16">
         <Kpi v={cop(c.valor_total)} l={`valor total (inicial ${cop(c.valor_inicial)})`} />
         <Kpi v={c.agotamiento_pct == null ? '·' : `${num(c.agotamiento_pct, 1)} %`} l={`agotamiento · saldo ${cop(c.saldo)}`} />
         <Kpi v={fechaCorta(c.fecha_fin_vigente)} l={`fin vigente · ${c.dias_restantes} dias`} />
         <Kpi v={c.fecha_agotamiento_estimada ? fechaCorta(c.fecha_agotamiento_estimada) : '·'} l={`plata se acaba (ritmo ${cop(c.ritmo_mensual)}/mes)`} />
       </div>
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card mb16">
         <Barra valor={Number(c.facturado)} meta={Number(c.valor_total)} etiqueta="Ejecucion presupuestal" de="del valor total" tope={1} />
         <div style={{ height: 10 }} />
         <Barra valor={Number(c.adiciones_pct_smlmv)} meta={50} etiqueta="Adiciones en SMLMV frente al tope legal del 50 %" de="del tope" tope={1} />
@@ -134,7 +134,7 @@ function Modificaciones({ c, edita, onCambio }) {
             <label className="campo">Motivo<textarea rows={2} value={f.motivo} onChange={set('motivo')} /></label>
             <label className="campo" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" checked={f.excepcion_legal} onChange={set('excepcion_legal')} /> La entidad justifica superar el tope (adjuntar soporte juridico)</label>
             {err && <div className="aviso bad">{err}</div>}
-            <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setNuevo(false)}>Cancelar</button><button className="btn btn-p">Guardar</button></div>
+            <div className="row end"><button type="button" className="btn" onClick={() => setNuevo(false)}>Cancelar</button><button className="btn btn-p">Guardar</button></div>
           </form>
         </Modal>
       )}
@@ -197,7 +197,7 @@ function SedesContrato({ c, edita, onCambio }) {
               <label className="campo">Firmante 2 (director / otro)<input value={f.firmante_2} onChange={set('firmante_2')} /></label>
             </div>
             {err && <div className="aviso bad">{err}</div>}
-            <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setNuevo(false)}>Cancelar</button><button className="btn btn-p">Guardar</button></div>
+            <div className="row end"><button type="button" className="btn" onClick={() => setNuevo(false)}>Cancelar</button><button className="btn btn-p">Guardar</button></div>
           </form>
         </Modal>
       )}
@@ -227,7 +227,7 @@ function Ejecucion({ c, edita, onCambio }) {
       <p className="small muted">Mientras llega el modulo de facturacion (F5), contabilidad carga aqui lo facturado y pagado cada mes. Con esto se calcula el agotamiento y la fecha en que se acaba la plata.</p>
       <Falla msg={d.err} />
       {edita && (
-        <form className="row" style={{ alignItems: 'flex-end' }} onSubmit={guardar}>
+        <form className="row abajo" onSubmit={guardar}>
           <label className="campo">Mes<input required type="month" value={f.periodo} onChange={set('periodo')} /></label>
           <label className="campo">Raciones<input type="number" min={0} value={f.raciones} onChange={set('raciones')} /></label>
           <label className="campo">Facturado (COP)<input required inputMode="numeric" value={f.valor_facturado} onChange={set('valor_facturado')} /></label>

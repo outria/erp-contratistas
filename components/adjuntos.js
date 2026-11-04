@@ -56,11 +56,11 @@ export function Adjuntos({ entidad, id, titulo = 'Documentos adjuntos', puedeSub
 
   const filas = d.datos || [];
   return (
-    <div className={compacto ? 'stack' : 'card stack'} style={{ gap: 8 }}>
-      <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
+    <div className={compacto ? 'stack' : 'card stack'} className="gap8">
+      <div className="row between gap8 wrap">
         <b>📎 {titulo} {filas.length ? <span className="small muted">({filas.length})</span> : null}</b>
         {puedeSubir && (
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="row gap6 wrap centro">
             <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Qué es (opcional): SOAT 2027, recibido firmado…" style={{ minWidth: 220 }} />
             <label className="btn btn-p" style={{ cursor: 'pointer', opacity: subiendo ? 0.6 : 1 }}>
               {subiendo ? 'Subiendo…' : '＋ Adjuntar'}
@@ -78,7 +78,7 @@ export function Adjuntos({ entidad, id, titulo = 'Documentos adjuntos', puedeSub
                 {a.descripcion ? <div className="small muted">{a.descripcion}</div> : null}</td>
               <td className="small muted">{tamano(a.tamano || 0)}</td>
               <td className="small muted">{new Date(a.subido_en).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })}{a.subido_nombre ? ' · ' + a.subido_nombre : ''}</td>
-              <td>{(perfil?.es_superadmin || a.subido_por === yo) && <button className="btn" style={{ padding: '3px 8px' }} onClick={() => quitar(a)} title="Quitar este adjunto">✕</button>}</td>
+              <td>{(perfil?.es_superadmin || a.subido_por === yo) && <button className="btn btn-xs" onClick={() => quitar(a)} title="Quitar este adjunto">✕</button>}</td>
             </tr>
           ))}</tbody>
         </table>

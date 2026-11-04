@@ -7,7 +7,7 @@ export const metadata = {
   manifest: '/manifest.webmanifest',
   applicationName: 'Supply ERP',
   appleWebApp: { capable: true, title: 'Supply ERP', statusBarStyle: 'default' },
-  icons: { icon: '/icon-192.png', apple: '/icon-192.png' },
+  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/icon-192.png' },
 };
 
 export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#1f2a44' };

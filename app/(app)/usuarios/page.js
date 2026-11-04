@@ -114,8 +114,8 @@ function PestanaUsuarios() {
       {ok && <div className="aviso ok">{ok}</div>}
       {puede('M0', 'crear') && (
         <div className="card stack">
-          <h2 style={{ margin: 0 }}>Invitar o dar acceso</h2>
-          <p className="muted small" style={{ margin: 0 }}>Si el correo es nuevo, le llega la invitación para crear su clave. Si ya tiene cuenta (por ejemplo, en otra empresa), solo se le da acceso a esta.</p>
+          <h2 className="m0">Invitar o dar acceso</h2>
+          <p className="muted small m0">Si el correo es nuevo, le llega la invitación para crear su clave. Si ya tiene cuenta (por ejemplo, en otra empresa), solo se le da acceso a esta.</p>
           <div className="grid g4" style={{ alignItems: 'end' }}>
             <label className="campo">Correo<input type="email" value={f.correo} onChange={(e) => setF({ ...f, correo: e.target.value })} placeholder="persona@correo.com" /></label>
             <label className="campo">Nombre<input value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} placeholder="Nombre y apellido" /></label>
@@ -142,11 +142,11 @@ function PestanaUsuarios() {
                   : u.ultimo_ingreso ? 'Último ingreso ' + fecha(u.ultimo_ingreso) : <span className="chip warn">Nunca ha entrado</span>}</td>
                 <td>{u.activo ? <span className="chip ok">Activo</span> : <span className="chip">Inactivo</span>}</td>
                 <td>
-                  <div className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    {puede('M0', 'crear') && u.activo && <button className="btn" style={{ padding: '5px 10px' }} disabled={!!ocupado} onClick={() => reenviar(u)}
+                  <div className="row gap6 wrap end">
+                    {puede('M0', 'crear') && u.activo && <button className="btn btn-s" disabled={!!ocupado} onClick={() => reenviar(u)}
                       title="Le llega un correo para crear o cambiar su clave">{ocupado === u.membresia_id ? 'Enviando…' : '✉ Reenviar acceso'}</button>}
-                    {puede('M0', 'editar') && <button className="btn" style={{ padding: '5px 10px' }} onClick={() => setEditar(u)}>Editar</button>}
-                    {puede('M0', 'editar') && <button className="btn" style={{ padding: '5px 10px' }} onClick={() => activar(u, !u.activo)}>{u.activo ? 'Desactivar' : 'Activar'}</button>}
+                    {puede('M0', 'editar') && <button className="btn btn-s" onClick={() => setEditar(u)}>Editar</button>}
+                    {puede('M0', 'editar') && <button className="btn btn-s" onClick={() => activar(u, !u.activo)}>{u.activo ? 'Desactivar' : 'Activar'}</button>}
                   </div>
                 </td>
               </tr>
@@ -184,7 +184,7 @@ function EditarUsuario({ u, roles, onCerrar, onListo }) {
           <select value={rol} onChange={(e) => setRol(e.target.value)}>{opciones.map((r) => <option key={r.id} value={r.codigo}>{r.nombre}</option>)}</select>
         </label>
         <Falla msg={err} />
-        <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
+        <div className="row gap8 end">
           <button className="btn" onClick={onCerrar}>Cancelar</button>
           <button className="btn btn-p" onClick={guardar} disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</button>
         </div>
@@ -210,7 +210,7 @@ function PestanaRoles({ puedeEditar }) {
   }
   return (
     <div className="stack">
-      <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="row between gap8 wrap">
         <span className="small muted">Toque un rol para ver sus funciones. Los roles de la plataforma solo los cambia el superadministrador; puede duplicarlos y ajustar la copia.</span>
         {puedeEditar && <button className="btn btn-p" onClick={() => setEditor({ nuevo: true, nombre: '', descripcion: '', permisos: [] })}>＋ Crear rol</button>}
       </div>
@@ -222,7 +222,7 @@ function PestanaRoles({ puedeEditar }) {
         return (
           <div key={r.id} className="card" style={{ padding: 0, borderColor: abre ? 'var(--naranja)' : undefined }}>
             <button onClick={() => setAbierto(abre ? null : r.id)} style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%', padding: '14px 16px', boxSizing: 'border-box' }}>
-              <div className="row between" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <div className="row between gap8 wrap">
                 <div>
                   <b>{r.nombre}</b> {r.sistema ? <span className="chip">Plataforma</span> : <span className="chip info">Propio</span>}
                   <div className="small muted">{r.descripcion || resumenRol(r.permisos)}</div>
@@ -234,7 +234,7 @@ function PestanaRoles({ puedeEditar }) {
               <div style={{ padding: '0 16px 14px' }}>
                 <FuncionesRol permisos={r.permisos} />
                 {puedeEditar && (
-                  <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                  <div className="row gap8 mt12 wrap">
                     {puedeCambiar && <button className="btn" onClick={() => setEditor({ id: r.id, nombre: r.nombre, descripcion: r.descripcion || '', permisos: r.permisos })}>Editar</button>}
                     <button className="btn" onClick={() => setEditor({ nuevo: true, nombre: r.nombre + ' (copia)', descripcion: r.descripcion || '', permisos: r.permisos })}>Duplicar</button>
                     {puedeCambiar && r.usuarios === 0 && <button className="btn" onClick={() => anular(r)}>Anular</button>}
@@ -260,7 +260,7 @@ function FuncionesRol({ permisos }) {
   const mods = ORDEN_MOD.filter((m) => ACCIONES.some((a) => tiene.has(m + ':' + a)));
   if (!mods.length) return <div className="small muted">Este rol no tiene funciones.</div>;
   return (
-    <div className="grid g2" style={{ gap: 12 }}>
+    <div className="grid g2 gap12">
       {mods.map((m) => (
         <div key={m}>
           <b className="small">{FUNCIONES[m]?.t || m}{SENSIBLES.includes(m) ? ' 🔒' : ''}{FUNCIONES[m] && !FUNCIONES[m].listo ? <span className="muted"> · próximamente</span> : null}</b>
@@ -308,7 +308,7 @@ function EditorRol({ inicial, onCerrar, onListo }) {
   }
   return (
     <Modal titulo={inicial.nuevo ? 'Crear rol' : 'Editar rol'} onCerrar={onCerrar} ancho>
-      <div className="stack" style={{ gap: 10 }}>
+      <div className="stack gap10">
         <div className="grid g2">
           <label className="campo">Nombre del rol<input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej.: Auxiliar de despachos" /></label>
           <label className="campo">Descripción (opcional)<input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Para qué cargo es" /></label>
@@ -331,9 +331,9 @@ function EditorRol({ inicial, onCerrar, onListo }) {
         </div>
         <details className="small"><summary>¿Qué da cada casilla?</summary><FuncionesRol permisos={ORDEN_MOD.flatMap((m) => ACCIONES.map((a) => ({ modulo: m, accion: a })))} /></details>
         <Falla msg={err} />
-        <div className="row between" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <div className="row between gap8 wrap">
           <span className="small"><b>{sel.size}</b> funciones marcadas</span>
-          <div className="row" style={{ gap: 8 }}>
+          <div className="row gap8">
             <button className="btn" onClick={onCerrar}>Cancelar</button>
             <button className="btn btn-p" onClick={guardar} disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar rol'}</button>
           </div>

@@ -57,7 +57,7 @@ function Datos({ empresaId, edita }) {
         <label className="campo">Correo<input disabled={!edita} type="email" value={e.correo ?? ''} onChange={set('correo')} /></label>
       </div>
       {msg && <div className={`aviso ${msg.t}`}>{msg.m}</div>}
-      {edita && f && <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setF(null)}>Deshacer</button><button className="btn btn-p">Guardar</button></div>}
+      {edita && f && <div className="row end"><button type="button" className="btn" onClick={() => setF(null)}>Deshacer</button><button className="btn btn-p">Guardar</button></div>}
     </form>
   );
 }
@@ -104,7 +104,7 @@ function Sedes({ empresaId, edita }) {
               {nuevo.id && <label className="campo">Estado<select value={nuevo.estado} onChange={set('estado')}><option value="activa">Activa</option><option value="anulada">Anulada</option></select></label>}
             </div>
             {err && <div className="aviso bad">{err}</div>}
-            <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setNuevo(null)}>Cancelar</button><button className="btn btn-p">Guardar</button></div>
+            <div className="row end"><button type="button" className="btn" onClick={() => setNuevo(null)}>Cancelar</button><button className="btn btn-p">Guardar</button></div>
           </form>
         </Modal>
       )}
@@ -128,7 +128,7 @@ function Parametros({ empresaId, edita }) {
     } catch (e) { setMsg({ t: 'bad', m: e.message }); }
   }
   return (
-    <div className="card stack" style={{ gap: 10 }}>
+    <div className="card stack gap10">
       <b>Parametros de la empresa</b>
       {msg && <div className={`aviso ${msg.t}`}>{msg.m}</div>}
       {d.datos.map((p) => <Campo key={p.clave} p={p} edita={edita} onGuardar={(t) => guardar(p, t)} />)}
@@ -140,8 +140,8 @@ function Campo({ p, edita, onGuardar }) {
   const original = typeof p.valor === 'object' && p.valor !== null ? JSON.stringify(p.valor) : String(p.valor ?? '');
   const [t, setT] = useState(original);
   return (
-    <div className="row between" style={{ gap: 8, alignItems: 'center', flexWrap: 'nowrap', paddingBottom: 8, borderBottom: '1px solid #eef1f5' }}>
-      <div style={{ flex: 1 }}><div>{p.descripcion ?? p.clave}</div><div className="small muted mono">{p.clave}</div></div>
+    <div className="row between" style={{ gap: 8, alignItems: 'center', flexWrap: 'nowrap', paddingBottom: 8, borderBottom: '1px solid var(--linea-suave)' }}>
+      <div className="flex1"><div>{p.descripcion ?? p.clave}</div><div className="small muted mono">{p.clave}</div></div>
       <input disabled={!edita} value={t} onChange={(e) => setT(e.target.value)} style={{ width: 220, textAlign: typeof p.valor === 'number' ? 'right' : 'left' }} />
       {edita && t !== original && <button className="btn btn-p" onClick={() => onGuardar(t)}>Guardar</button>}
     </div>

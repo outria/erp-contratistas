@@ -33,7 +33,7 @@ export default function Tablero() {
       </Consejo>
       {d.err && <Falla msg={d.err} />}
       {puede('M1') && (d.cargando && !d.datos ? <Cargando /> : (
-        <div className="grid g4" style={{ marginBottom: 20 }}>
+        <div className="grid g4 mb20">
           <Kpi v={vigentes.length} l="contratos vigentes" />
           <Kpi v={cop(total)} l="valor total contratado (con adiciones)" />
           <Kpi v={total ? `${num(fact / total * 100, 1)} %` : '·'} l="agotamiento presupuestal" />
@@ -41,7 +41,7 @@ export default function Tablero() {
         </div>
       ))}
       {puede('M1') && cs.length > 0 && (
-        <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card mb20">
           <h2>Contratos</h2>
           <table className="t">
             <thead><tr><th>Contrato</th><th>Entidad</th><th>Modalidad</th><th className="n">Valor total</th><th className="n">Agotado</th><th>Fin vigente</th><th className="n">Dias</th></tr></thead>

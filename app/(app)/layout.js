@@ -15,10 +15,11 @@ const MENU = [
   { h: '/seguimiento-oc', t: 'Seguimiento de OC (TV)', m: 'M3', pronto: true },
   { g: 'Contrato y planeacion' },
   { h: '/contratos', t: 'Contratos y anexos', m: 'M1' },
+  { h: '/programacion', t: 'Programacion de menus', m: ['M2', 'M3', 'M7'] },
   { h: '/minutas', t: 'Minutas y calendario', m: 'M2', pronto: true },
   { h: '/cupos', t: 'Cupos, dietas y novedades', m: 'M2', pronto: true },
   { h: '/explosion', t: 'Explosion de materiales', m: 'M2', pronto: true },
-  { h: '/intercambios', t: 'Intercambios de menu por sede', m: 'M2', pronto: true },
+  { h: '/intercambios', t: 'Intercambios y novedades', m: ['M2', 'M7'] },
   { g: 'Compras' },
   { h: '/proveedores', t: 'Proveedores y homologacion', m: 'M3', pronto: true },
   { h: '/precios', t: 'Master de precios y ofertas', m: 'M3', pronto: true },
@@ -68,18 +69,18 @@ export default function AppLayout({ children }) {
   const nombre = empresa?.nombre_corto || empresa?.razon_social;
   return (
     <div className="shell">
-      <button className="burger" onClick={() => setAbierto(true)}>☰ <b>Supply ERP</b> <span style={{ opacity: 0.7 }}>{nombre}</span></button>
+      <button className="burger" onClick={() => setAbierto(true)}>☰ <b>Supply ERP</b> <span className="op70">{nombre}</span></button>
       <aside className={`side ${abierto ? 'abierto' : ''}`}>
         <div className="brand">
           <div className="brand-logo">SE</div>
-          <div><b>Supply ERP</b><span>contratistas · pruebas</span></div>
+          <div><b>Supply ERP</b><span>cadena de suministro</span></div>
         </div>
         {empresas.length > 1 ? (
           <select value={empresaId ?? ''} onChange={(e) => setEmpresaId(e.target.value)} aria-label="Empresa">
             {empresas.map((e) => <option key={e.id} value={e.id}>{esDemo(e) ? `${e.nombre_corto || e.razon_social} (práctica)` : (e.nombre_corto || e.razon_social)}</option>)}
           </select>
-        ) : <div className="small" style={{ padding: '0 8px' }}>{nombre}</div>}
-        {esDemo(empresa) && <div className="small" style={{ margin: '4px 8px', padding: '4px 8px', borderRadius: 6, background: '#fff3cd', color: '#7a5b00' }}>Empresa de práctica: lo que registres aquí no cuenta en la operación real.</div>}
+        ) : <div className="small p0">{nombre}</div>}
+        {esDemo(empresa) && <div className="aviso-demo">Empresa de práctica: lo que registres aquí no cuenta en la operación real.</div>}
         <nav className="nav">
           {MENU.map((x, i) => x.g ? <div key={i} className="grupo">{x.g}</div> :
             ve(x.m) && (x.pronto
@@ -94,7 +95,7 @@ export default function AppLayout({ children }) {
       </aside>
       <main className="main">
         <Actualizador />
-        {error && <div className="aviso bad" style={{ marginBottom: 12 }}>{error}</div>}
+        {error && <div className="aviso bad mb12">{error}</div>}
         {bloqueada ? <div className="aviso bad">Su rol no tiene acceso a esta pantalla.</div> : empresaId ? children : <span className="muted">Cargando empresa…</span>}
       </main>
     </div>

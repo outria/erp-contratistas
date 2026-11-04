@@ -39,7 +39,7 @@ export default function MiCuenta() {
           {perfil?.es_superadmin && <div><b>Perfil:</b> superadministrador</div>}
         </div>
         <form className="stack" onSubmit={guardar}>
-          <h3 style={{ margin: 0 }}>Crear o cambiar mi clave</h3>
+          <h3 className="m0">Crear o cambiar mi clave</h3>
           <label className="campo">Clave nueva (minimo 10 caracteres)
             <input type="password" autoComplete="new-password" required value={c1} onChange={(e) => setC1(e.target.value)} />
           </label>
