@@ -201,3 +201,25 @@ Pedido de Osvaldo al ver la pantalla: con un PAE de 147 colegios no se puede ver
 - Plantilla Excel entregada a Osvaldo para recoger la cobertura: USPEC (PPL por establecimiento, hombres y mujeres, poblacion por dieta terapeutica y sexo) y PAE (estudiantes por colegio, modalidad y grupo etario), mas casinos y otros por sede y tiempo. El modelo ya los recibe (`cupos_contrato` por grupo y tiempo, `dietas_poblacion` por grupo y dieta, `partes_diarios`); falta la pantalla de Cupos, dietas y novedades para cargarlos sin SQL y el importador desde Excel.
 
 Pendiente que se agrega: pantalla de Cupos y dietas con importador Excel (prioridad alta, es lo que destraba la explosion real); grupos etarios por contrato parametrizables desde Minutas y calendario.
+
+## 2026-11-04 · Poblacion simulada, pantalla de Cupos y dietas e importador Excel (migraciones 017 a 019, version 0.7.0)
+Osvaldo no tiene a la mano la focalizacion PAE, los partes de guardia ni la BD de dietas, y pidio no vararse: simular con sus reglas y seguir.
+
+### Hecho
+- **Grupos etarios PAE** (mig 017): la plantilla pasa a cinco grupos (preescolar 3 a 5, 6 a 8, 9 a 13, 14 a 17, 18 o mas), parametrizables por contrato; los contratos PAE existentes se migran (4 a 8 pasa a 6 a 8). Los nombres se ajustan cuando llegue el lineamiento del contrato.
+- **Simulador de poblacion** `simular_poblacion(semilla)` (mig 017), reproducible: Demo PAE crece a 34 colegios del Atlantico, cada uno con una modalidad (RPS o RI, pocos combinan con CAM/CPM) y participacion por grupo etario entre 15 % y 25 %; Demo USPEC pasa a 12 establecimientos sin mujeres (como los grupos 6 y 7); dietas para Demo USPEC y Diestra entre 0 % y 40 % de la PPL (moda cerca del 15 %), 84 a 92 % hipercalorica e hiperproteica, 3 a 7 % hiposodica, el resto contadas, gestantes solo donde hay mujeres (COCUC). Todo con fuente `SIMULADA ...` para reemplazarlo. Excel entregado: `Poblacion_SIMULADA_Supply_ERP_2026-11-04.xlsx`.
+- Vistas planas `v_poblacion_vigente` y `v_dietas_vigentes` (security invoker) para revisar y exportar.
+- **Programacion mas rapida** (mig 018): el menu se calcula una vez por "llave" (ciclo + variante + secuencia de dias) y se comparte entre las sedes sin intercambios propios; `dia_ciclo` cuenta los dias de servicio con un join a festivos en vez de llamar `es_dia_habil` dia por dia (88.000 llamadas en 34 colegios x 4 semanas). 34 colegios x 4 semanas: 2,0 s a 1,1 s; estimado 147 colegios: ~3,5 s. El rotulo de una fila agrupada muestra ahora las modalidades que sirve y la cobertura (Menu estandar · RPS · 13.341 estudiantes).
+- **Pantalla Cupos y dietas** (`/cupos`, mig 019, menu M2/M3/M7):
+  - Tabla por sede (y por modalidad en PAE) con cada grupo, total, desde cuando rige, fuente (chip "simulada"), vigencia futura y parte del dia; totales por grupo. Fecha "lo que rige el" para ver cualquier dia.
+  - Panel de edicion por sede con fecha "rige desde" y fuente: `guardar_cupos` cierra la vigencia anterior el dia antes y abre la nueva; un cero quita el cupo; la variante es de la sede, no de la poblacion.
+  - Pestana Dietas: por sede, poblacion, en dieta, %, columnas por dieta usada; panel por dieta y sexo con alerta si hay mas en dieta que poblacion; `guardar_dietas` con la misma regla de vigencias.
+  - **Importar Excel**: lee la plantilla de recoleccion (hojas USPEC cupos con hombres y mujeres, USPEC dietas, PAE focalizacion, casinos) o cualquier Excel con columnas parecidas (sede/establecimiento/institucion, sexo o grupo etario, modalidad, dieta, cantidad, fecha). `importar_poblacion` resuelve sede por nombre exacto sin acentos o por parecido (trigramas, umbral 0,45), grupo por codigo o nombre, tiempo y dieta por codigo o nombre; previsualiza fila por fila con la sede resuelta y el error, y solo carga cuando todo cuadra (agrupando por sede y fecha, sumando filas repetidas). Deja rastro en `importaciones`.
+  - Descargar Excel con lo vigente en el formato de la plantilla.
+  - Permisos: M2 editar edita todo; M7 editar solo su sede (`puede_editar_poblacion`); importar solo M2.
+- Plantilla de recoleccion entregada: `Plantilla_cobertura_cupos_dietas_Supply_ERP.xlsx`.
+
+### Pendiente
+- Partes diarios (parte de guardia dia a dia) desde la pantalla: hoy solo por SQL o importacion; la tabla ya existe y `poblacion_dia` la prioriza sobre los cupos.
+- Grupos etarios y gramajes por grupo desde Minutas y calendario.
+- Explosion con presets (8/15/30/90 dias), catalogo maestro y consolidada en pantalla.
