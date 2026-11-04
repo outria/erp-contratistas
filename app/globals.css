@@ -3,19 +3,19 @@
 :root {
   --primario: #1f2a44;        /* barra lateral, botones principales, titulos fuertes */
   --primario-2: #2c3a5c;      /* hover del primario */
-  --primario-texto: var(--primario-texto);  /* texto sobre el primario */
+  --primario-texto: #c9d2e3;  /* texto sobre el primario */
   --acento: #d98e04;          /* acciones destacadas, foco, resaltes */
-  --acento-2: var(--acento-2);        /* hover del acento */
-  --acento-suave: var(--acento-suave);    /* fondos resaltados */
+  --acento-2: #e48c12;        /* hover del acento */
+  --acento-suave: #fff4e3;    /* fondos resaltados */
   --fondo: #f6f7f9;           /* fondo de la aplicacion */
-  --fondo-2: var(--linea-suave);         /* fondos secundarios, cabeceras de tabla */
+  --fondo-2: #eef1f5;         /* fondos secundarios, cabeceras de tabla */
   --superficie: #ffffff;      /* tarjetas, tablas, campos */
   --linea: #e3e7ee;
-  --linea-suave: var(--linea-suave);
+  --linea-suave: #eef1f5;
   --texto: #1c2433;
   --suave: #5b6678;
   --ok: #2f7d4f;    --ok-bg: #e3f2e8;
-  --warn: #9a6400;  --warn-bg: var(--acento-suave);
+  --warn: #9a6400;  --warn-bg: #fff7e6;
   --bad: #b3261e;   --bad-bg: #fbe3e1;
   --info: #285c8f;  --info-bg: #e2eef9;
   --radio: 12px; --radio-s: 9px; --radio-l: 16px;
