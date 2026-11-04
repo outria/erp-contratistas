@@ -115,7 +115,7 @@ export const unidadCupos = (modalidad) => modalidad === 'uspec_ppl' ? 'PPL' : mo
 const nf = (n) => n == null ? '·' : Number(n).toLocaleString('es-CO');
 
 // Fila de la cuadricula: una sede, o un grupo de sedes que comparten exactamente el mismo menu en el rango
-export function FilaRotulo({ fila, sedesMap, unidad, abierto, onAbrir }) {
+export function FilaRotulo({ fila, sedesMap, unidad, abierto, onAbrir, servidos, total }) {
   const nombres = fila.sedes.map((id) => sedesMap.get(id)?.nombre ?? '·');
   if (fila.n === 1) {
     const s = sedesMap.get(fila.rep);
@@ -123,7 +123,8 @@ export function FilaRotulo({ fila, sedesMap, unidad, abierto, onAbrir }) {
   }
   return (
     <div className="prg-sede">
-      <span style={{ color: fila.estandar ? 'var(--primario)' : 'inherit' }}>{fila.estandar ? 'Menu estandar' : 'Mismo menu'}</span>
+      <span style={{ color: fila.estandar ? 'var(--primario)' : 'inherit' }}>{fila.estandar ? 'Menu estandar' : 'Mismo menu'}{servidos?.length ? ` · ${servidos.join('+')}` : ''}</span>
+      {total > 0 && <span>{nf(total)} {unidad}</span>}
       <button className="btn btn-xs" style={{ alignSelf: 'flex-start' }} onClick={onAbrir} aria-expanded={abierto}>{fila.n} sedes {abierto ? '▴' : '▾'}</button>
       {abierto && <div className="small" style={{ lineHeight: 1.3 }}>{nombres.join(' · ')}</div>}
     </div>
@@ -144,7 +145,9 @@ export function Semana({ lunes, filas, sedesMap, celdas, tiempos, novedades, dia
             const s = sedesMap.get(fila.rep);
             return (
             <div key={fila.rep} style={{ display: 'contents' }}>
-              <FilaRotulo fila={fila} sedesMap={sedesMap} unidad={unidad} abierto={!!abiertos[fila.rep]} onAbrir={() => onAbrir(fila.rep)} />
+              <FilaRotulo fila={fila} sedesMap={sedesMap} unidad={unidad} abierto={!!abiertos[fila.rep]} onAbrir={() => onAbrir(fila.rep)}
+                servidos={tiempos.filter((t) => fechas.some((f) => (celdas.get(`${fila.rep}|${f}`)?.cupos?.por_tiempo?.[t.codigo] ?? 0) > 0)).map((t) => t.codigo)}
+                total={Math.max(0, ...fechas.map((f) => celdas.get(`${fila.rep}|${f}`)?.cupos?.total ?? 0))} />
               {fechas.map((f) => {
                 const c = celdas.get(`${fila.rep}|${f}`);
                 const enFecha = novedades.filter((n) => n.fecha <= f && (n.fecha_hasta ?? n.fecha) >= f && (!n.sede_id || fila.sedes.includes(n.sede_id)));
