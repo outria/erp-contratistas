@@ -48,6 +48,8 @@ export function PanelDia({ sede, fecha, celda, datos, fila, sedesMap, unidad = '
   const aviso = (id, a) => accion(() => q(sb().rpc('registrar_aviso_novedad', { p_id: id, p_a: a })), 'Aviso registrado.');
 
   const grupo = fila && fila.n > 1;
+  const pt = celda?.cupos?.por_tiempo;
+  const sinCupos = (t) => !!pt && !((pt[t.codigo] ?? 0) > 0);
   const grupos = datos.grupos_poblacion ?? [];
   const nf = (n) => n == null ? '·' : Number(n).toLocaleString('es-CO');
   const fmtG = (v) => v == null ? null : String(v).replace(/\.00\b/, '');
@@ -101,9 +103,13 @@ export function PanelDia({ sede, fecha, celda, datos, fila, sedesMap, unidad = '
           onListo={() => accion(async () => {}, 'Intercambio propuesto.')} onCancelar={() => setModo(null)} />
       ) : (
         <>
-          {celda?.servicio && tiempos.map((t) => {
+          {celda?.servicio && [...tiempos].sort((a, b) => (sinCupos(b) ? 0 : 1) - (sinCupos(a) ? 0 : 1)).map((t) => {
             const its = porTiempo[t.codigo];
             if (!its) return null;
+            if (sinCupos(t)) return (
+              <details key={t.codigo} className="tiempo-bloque"><summary className="small muted" style={{ cursor: 'pointer' }}>{t.nombre} ({t.codigo}): esta sede no tiene cupos en este tiempo. Ver menu</summary>
+                {its.map((i) => <div key={i.componente_id} className="comp-fila"><span className="cc">{i.componente}</span><span>{i.preparacion ?? '(sin receta)'}</span><span /></div>)}
+              </details>);
             return (
               <div key={t.codigo} className="tiempo-bloque">
                 <h4>{t.nombre}<span className="muted small">{t.codigo}</span></h4>

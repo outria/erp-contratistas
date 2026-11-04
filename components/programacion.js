@@ -79,6 +79,11 @@ export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClic
   const porTiempo = {};
   for (const i of celda.items ?? []) (porTiempo[i.tiempo] ??= []).push(i);
   const clases = new Set((celda.items ?? []).filter((i) => i.clase).map((i) => (i.estado === 'propuesto' && i.clase !== 'contingencia') ? 'propuesto' : i.clase));
+  // tiempos que la sede realmente sirve: si hay cupos por tiempo (PAE), solo los que tienen cupos; si no, todos
+  const pt = celda.cupos?.por_tiempo;
+  const activos = pt ? tiempos.filter((t) => (pt[t.codigo] ?? 0) > 0 && porTiempo[t.codigo]) : tiempos.filter((t) => porTiempo[t.codigo]);
+  // una sola modalidad (un colegio solo RPS, o solo RI): caben todos los componentes en la celda
+  const completo = activos.length === 1;
   return (
     <button className={`celda-dia${sel ? ' sel' : ''}${pasado ? ' pasado' : ''}`} onClick={onClick} aria-label={`${celda.fecha}: menu ${celda.dia ?? ''}`}>
       <div className="celda-menu"><span className="n">Menu {celda.dia ?? '·'}</span>
@@ -88,9 +93,14 @@ export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClic
         </span></div>
       {celda.excepcion?.tipo === 'dia_forzado' && <div className="nota repo">{celda.excepcion.desde ? `trasladado del ${fechaDM(celda.excepcion.desde)}` : 'dia forzado'}</div>}
       {celda.reposicion && <div className="nota repo">jornada de reposicion</div>}
-      {tiempos.map((t) => {
+      {completo ? (
+        <>
+          <div className="celda-tiempo"><b>{activos[0].codigo}</b><span className="muted">{activos[0].nombre}</span></div>
+          {porTiempo[activos[0].codigo].map((i) => (
+            <div key={i.componente_id} className={`celda-tiempo comp${i.origen !== 'ciclo' ? ' cambio' : ''}${i.estado === 'propuesto' && i.clase !== 'contingencia' ? ' propuesto' : ''}`} title={`${i.componente}: ${i.preparacion ?? '(sin receta)'}`}><b>{i.componente.slice(0, 5)}</b><span>{i.preparacion ?? '(sin receta)'}</span></div>))}
+        </>
+      ) : activos.map((t) => {
         const its = porTiempo[t.codigo];
-        if (!its) return null;
         const r = resumenTiempo(its);
         const cambio = its.some((i) => i.origen !== 'ciclo');
         const prop = its.some((i) => i.estado === 'propuesto' && i.clase !== 'contingencia');

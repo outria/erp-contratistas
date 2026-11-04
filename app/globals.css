@@ -207,6 +207,8 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .cupos-panel b { font-size: 16px; }
 .celda-tiempo { font-size: 12px; line-height: 1.25; display: flex; gap: 4px; align-items: baseline; min-width: 0; }
 .celda-tiempo b { font-size: 10px; color: var(--suave); flex: 0 0 28px; text-transform: uppercase; }
+.celda-tiempo.comp b { flex-basis: 34px; font-weight: 500; letter-spacing: 0; }
+.celda-tiempo.comp { font-size: 11.5px; }
 .celda-tiempo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .celda-tiempo.cambio span { color: var(--info); font-weight: 600; }
 .celda-tiempo.propuesto span { color: var(--warn); font-style: italic; }
