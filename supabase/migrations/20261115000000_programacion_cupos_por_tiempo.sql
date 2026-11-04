@@ -1,6 +1,5 @@
 -- Supply ERP · Migracion 015 · Cupos por tiempo de comida sumados sobre todos los grupos de poblacion (antes tomaba un solo grupo)
-drop function if exists public.programacion(uuid, date, date, uuid[], boolean);
-create function public.programacion(p_contrato uuid, p_desde date, p_hasta date, p_sedes uuid[] default null, p_incluye_propuestos boolean default false, p_agrupar boolean default true)
+create or replace function public.programacion(p_contrato uuid, p_desde date, p_hasta date, p_sedes uuid[] default null, p_incluye_propuestos boolean default false, p_agrupar boolean default true)
 returns jsonb language plpgsql security definer set search_path = public set jit = off set client_min_messages = warning as $$
 declare v_emp uuid; v_mi_sede uuid; v_res jsonb; v_n_sedes int; v_dias int; v_n_grupos int;
 begin
