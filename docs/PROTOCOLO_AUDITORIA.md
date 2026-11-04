@@ -31,3 +31,4 @@ El atajo de administrador SQL es `public.es_admin_sql()`; nunca `auth.uid() is n
 | Fecha | Alcance | Resultado |
 |---|---|---|
 | 2026-11-02 | M2 Planeacion backend (mig 006 a 009) y frontend actual | 2 criticos, 7 altos, 5 medios, 4 bajos. Criticos, altos y 3 medios corregidos en mig 010 (v0.5.0); el resto en el pendiente del control de cambios. |
+| 2026-11-03 | Etapa 4C: programacion multisemana, novedades PAE, empresas demo, UI/UX | 5 altos, 7 medios, 7 bajos. Altos y medios corregidos en mig 013 (v0.6.1) con las mejoras UI/UX 1 a 10; bajos en el pendiente. |
