@@ -8,7 +8,7 @@ import { Panel, Estado, Campo, Falla, Info } from '@/components/ui';
 import { fechaCorta, sumarDias, num } from '@/lib/fmt';
 import { CLASES_INTERCAMBIO, TIPOS_NOVEDAD, ACCIONES_NOVEDAD } from '@/lib/catalogos';
 
-export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
+export function PanelDia({ sede, fecha, celda, datos, fila, sedesMap, unidad = 'cupos', onCerrar, onCambio, onSede }) {
   const { puede, empresaId } = useApp();
   const [modo, setModo] = useState(null);        // null | {tipo:'intercambio', item} | {tipo:'novedad'}
   const [msg, setMsg] = useState(null);
@@ -47,9 +47,25 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
   };
   const aviso = (id, a) => accion(() => q(sb().rpc('registrar_aviso_novedad', { p_id: id, p_a: a })), 'Aviso registrado.');
 
+  const grupo = fila && fila.n > 1;
+  const grupos = datos.grupos_poblacion ?? [];
+  const nf = (n) => n == null ? '·' : Number(n).toLocaleString('es-CO');
+  const fmtG = (v) => v == null ? null : String(v).replace(/\.00\b/, '');
   return (
-    <Panel titulo={`${sede.nombre}`} sub={`${fechaCorta(fecha)}${celda?.dia ? ` · menu ${celda.dia} del ciclo` : ''}${!celda?.servicio ? ' · sin servicio' : ''}`} onCerrar={onCerrar}>
+    <Panel titulo={grupo ? `${fila.estandar ? 'Menu estandar' : 'Mismo menu'} · ${fila.n} sedes` : sede.nombre} sub={`${fechaCorta(fecha)}${celda?.dia ? ` · menu ${celda.dia} del ciclo` : ''}${!celda?.servicio ? ' · sin servicio' : ''}`} onCerrar={onCerrar}>
       {msg && <div className={`aviso ${msg.ok ? 'ok' : 'bad'}`}>{msg.t}</div>}
+      {grupo && (
+        <Campo l={`Este menu aplica a ${fila.n} sedes. Los cambios y novedades se registran para la sede escogida (o para todo el contrato):`}>
+          <select value={sede.id} onChange={(e) => onSede?.(sedesMap.get(e.target.value))}>{fila.sedes.map((id) => <option key={id} value={id}>{sedesMap.get(id)?.nombre}</option>)}</select>
+        </Campo>
+      )}
+      {celda?.cupos?.total != null && (
+        <div className="cupos-panel">
+          <span><b>{nf(celda.cupos.total)}</b> {unidad}{grupo ? ` en las ${fila.n} sedes` : ''}</span>
+          {celda.cupos.dieta > 0 && <span><b>{nf(celda.cupos.dieta)}</b> en dieta</span>}
+          {celda.cupos.por_tiempo && Object.entries(celda.cupos.por_tiempo).map(([k, v]) => <span key={k}><b>{nf(v)}</b> {k}</span>)}
+        </div>
+      )}
 
       {novedades.map((n) => (
         <div key={n.id} className={`aviso ${n.estado === 'aprobada' ? 'info' : ''}`}>
@@ -97,6 +113,11 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
                     <span>
                       {i.preparacion ?? <span className="muted">(sin receta asignada)</span>}
                       {i.origen !== 'ciclo' && <div className={`origen${i.estado === 'propuesto' ? ' propuesto' : ''}`}>{CLASES_INTERCAMBIO[i.clase] ?? 'intercambio'}{i.estado ? ` · ${i.estado.replace(/_/g, ' ')}` : ''}</div>}
+                      {i.gramaje?.grupos && (
+                        <span className="gramaje" title={`Servido = minuta patron; crudo = ${i.gramaje.producto ?? 'ingrediente principal'} por racion`}>
+                          {grupos.map((g) => { const x = i.gramaje.grupos[g.codigo]; if (!x || (x.servido == null && x.crudo == null)) return null;
+                            return <span key={g.codigo}>{grupos.length > 1 ? `${g.codigo}: ` : ''}{x.servido ? <b>{fmtG(x.servido)}</b> : null}{x.servido && x.crudo != null ? ' · ' : ''}{x.crudo != null ? `crudo ${x.crudo} g` : ''}{'  '}</span>; })}
+                        </span>)}
                     </span>
                     <span className="row gap4 nowrap">
                       {i.intercambio_id && i.estado === 'propuesto' && (puede('M2', 'aprobar') || puede('M7', 'aprobar')) && <button className="btn btn-xs" disabled={ocupado} title="Concertar con la poblacion" onClick={() => estadoIntercambio(i.intercambio_id, 'concertado')}>Concertar</button>}

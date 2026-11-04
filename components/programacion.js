@@ -55,7 +55,7 @@ function resumenTiempo(items) {
 
 const fechaDM = (iso) => { if (!iso) return ''; const d = desdeISO(iso); return `${d.getDate()}/${d.getMonth() + 1}`; };
 
-export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClick, hoy }) {
+export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClick, hoy, unidad = 'cupos' }) {
   if (!celda) return <div className="celda-dia sin" />;
   const pasado = celda.fecha < hoy;
   if (!celda.servicio) {
@@ -81,7 +81,11 @@ export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClic
   const clases = new Set((celda.items ?? []).filter((i) => i.clase).map((i) => (i.estado === 'propuesto' && i.clase !== 'contingencia') ? 'propuesto' : i.clase));
   return (
     <button className={`celda-dia${sel ? ' sel' : ''}${pasado ? ' pasado' : ''}`} onClick={onClick} aria-label={`${celda.fecha}: menu ${celda.dia ?? ''}`}>
-      <div className="celda-menu"><span className="n">Menu {celda.dia ?? '·'}</span>{novedad && <span className="punto novedad" title="Novedad propuesta para este dia" aria-label="novedad propuesta" />}</div>
+      <div className="celda-menu"><span className="n">Menu {celda.dia ?? '·'}</span>
+        <span className="row gap4 nowrap">
+          {celda.cupos?.total != null && <span className="cupos" title={`${nf(celda.cupos.total)} ${unidad}${celda.cupos.dieta ? ` · ${nf(celda.cupos.dieta)} en dieta` : ''}${celda.cupos.por_tiempo ? ' · ' + Object.entries(celda.cupos.por_tiempo).map(([k, v]) => `${k} ${nf(v)}`).join(', ') : ''}`}>{nf(celda.cupos.total)}{celda.cupos.dieta ? <i> +{nf(celda.cupos.dieta)}d</i> : null}</span>}
+          {novedad && <span className="punto novedad" title="Novedad propuesta para este dia" aria-label="novedad propuesta" />}
+        </span></div>
       {celda.excepcion?.tipo === 'dia_forzado' && <div className="nota repo">{celda.excepcion.desde ? `trasladado del ${fechaDM(celda.excepcion.desde)}` : 'dia forzado'}</div>}
       {celda.reposicion && <div className="nota repo">jornada de reposicion</div>}
       {tiempos.map((t) => {
@@ -97,7 +101,26 @@ export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClic
   );
 }
 
-export function Semana({ lunes, sedes, celdas, tiempos, novedades, dias, hoy, sel, onCelda }) {
+export const unidadCupos = (modalidad) => modalidad === 'uspec_ppl' ? 'PPL' : modalidad === 'pae' ? 'estudiantes' : modalidad === 'icbf_primera_infancia' ? 'ninos' : 'cupos';
+const nf = (n) => n == null ? '·' : Number(n).toLocaleString('es-CO');
+
+// Fila de la cuadricula: una sede, o un grupo de sedes que comparten exactamente el mismo menu en el rango
+export function FilaRotulo({ fila, sedesMap, unidad, abierto, onAbrir }) {
+  const nombres = fila.sedes.map((id) => sedesMap.get(id)?.nombre ?? '·');
+  if (fila.n === 1) {
+    const s = sedesMap.get(fila.rep);
+    return <div className="prg-sede">{s?.nombre}<span>{s?.ciudad}{s?.cupos ? ` · ${nf(s.cupos)} ${unidad}` : ''}</span></div>;
+  }
+  return (
+    <div className="prg-sede">
+      <span style={{ color: fila.estandar ? 'var(--primario)' : 'inherit' }}>{fila.estandar ? 'Menu estandar' : 'Mismo menu'}</span>
+      <button className="btn btn-xs" style={{ alignSelf: 'flex-start' }} onClick={onAbrir} aria-expanded={abierto}>{fila.n} sedes {abierto ? '▴' : '▾'}</button>
+      {abierto && <div className="small" style={{ lineHeight: 1.3 }}>{nombres.join(' · ')}</div>}
+    </div>
+  );
+}
+
+export function Semana({ lunes, filas, sedesMap, celdas, tiempos, novedades, dias, hoy, sel, onCelda, unidad, abiertos, onAbrir }) {
   const fechas = Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
   const festivo = (f) => dias.find((d) => d.fecha === f)?.festivo;
   return (
@@ -107,18 +130,20 @@ export function Semana({ lunes, sedes, celdas, tiempos, novedades, dias, hoy, se
         <div className="prg-tabla">
           <div />
           {fechas.map((f, i) => <div key={f} className={`prg-cab${f === hoy ? ' hoy' : ''}${festivo(f) ? ' festivo' : ''}`} title={festivo(f) ?? ''}>{DIAS_L[i]}<b>{desdeISO(f).getDate()}</b>{festivo(f) && <span className="small">festivo</span>}</div>)}
-          {sedes.map((s) => (
-            <div key={s.id} style={{ display: 'contents' }}>
-              <div className="prg-sede">{s.nombre}<span>{s.ciudad}{s.cupos ? ` · ${s.cupos} cupos` : ''}</span></div>
+          {filas.map((fila) => {
+            const s = sedesMap.get(fila.rep);
+            return (
+            <div key={fila.rep} style={{ display: 'contents' }}>
+              <FilaRotulo fila={fila} sedesMap={sedesMap} unidad={unidad} abierto={!!abiertos[fila.rep]} onAbrir={() => onAbrir(fila.rep)} />
               {fechas.map((f) => {
-                const c = celdas.get(`${s.id}|${f}`);
-                const enFecha = novedades.filter((n) => n.fecha <= f && (n.fecha_hasta ?? n.fecha) >= f && (!n.sede_id || n.sede_id === s.id));
+                const c = celdas.get(`${fila.rep}|${f}`);
+                const enFecha = novedades.filter((n) => n.fecha <= f && (n.fecha_hasta ?? n.fecha) >= f && (!n.sede_id || fila.sedes.includes(n.sede_id)));
                 const nov = enFecha.find((n) => n.estado === 'propuesta');
                 const apl = enFecha.find((n) => n.estado === 'aprobada' && (c?.sin_servicio?.novedad_id ? n.id === c.sin_servicio.novedad_id : true));
-                return <CeldaDia key={f} celda={c} tiempos={tiempos} novedad={nov} novedadAplicada={apl} hoy={hoy} sel={sel?.sede_id === s.id && sel?.fecha === f} onClick={() => onCelda(s, f, c)} />;
+                return <CeldaDia key={f} celda={c} tiempos={tiempos} novedad={nov} novedadAplicada={apl} hoy={hoy} unidad={unidad} sel={sel?.sede_id === fila.rep && sel?.fecha === f} onClick={() => onCelda(s, f, c, fila)} />;
               })}
-            </div>
-          ))}
+            </div>);
+          })}
         </div>
       </div>
     </section>
