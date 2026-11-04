@@ -3,7 +3,9 @@
 :root {
   --primario: #1f2a44;        /* barra lateral, botones principales, titulos fuertes */
   --primario-2: #2c3a5c;      /* hover del primario */
-  --primario-texto: #c9d2e3;  /* texto sobre el primario */
+  --primario-texto: #c9d2e3;  /* texto secundario sobre el primario */
+  --sobre-primario: #ffffff;  /* texto principal sobre el primario y el acento oscuro */
+  --acento-texto: #9a6400;    /* el acento cuando va como texto sobre blanco (contraste AA) */
   --acento: #d98e04;          /* acciones destacadas, foco, resaltes */
   --acento-2: #e48c12;        /* hover del acento */
   --acento-suave: #fff4e3;    /* fondos resaltados */
@@ -87,7 +89,7 @@ h3 { font-size: 15px; margin: 0 0 8px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; padding: 9px 14px; font: inherit; font-weight: 600; font-size: 14px; border: 1px solid var(--linea); background: var(--superficie); color: var(--texto); cursor: pointer; text-decoration: none; white-space: nowrap; }
 .btn:hover { background: var(--fondo-2); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-p { background: var(--primario); color: #fff; border-color: var(--primario); }
+.btn-p { background: var(--primario); color: var(--sobre-primario); border-color: var(--primario); }
 .btn-p:hover { background: var(--primario-2); }
 .btn-n { background: var(--acento); color: var(--primario); border-color: var(--acento); }
 .btn-n:hover { background: var(--acento-2); }
@@ -177,15 +179,15 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .prg-semanas { display: inline-flex; border: 1px solid var(--linea); border-radius: 10px; overflow: hidden; background: var(--superficie); }
 .prg-semanas button { border: 0; border-right: 1px solid var(--linea); background: transparent; padding: 8px 12px; font: inherit; font-size: 13px; font-weight: 600; color: var(--suave); cursor: pointer; }
 .prg-semanas button:last-child { border-right: 0; }
-.prg-semanas button.on { background: var(--primario); color: #fff; }
-.prg-semanas button.hoy { color: var(--acento); }
+.prg-semanas button.on { background: var(--primario); color: var(--sobre-primario); }
+.prg-semanas button.hoy { color: var(--acento-texto); }
 .prg-semana { margin-bottom: 18px; }
 .prg-semana > h3 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font-size: 14px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.05em; }
 .prg-semana > h3 b { color: var(--texto); font-size: 15px; letter-spacing: 0; text-transform: none; }
 .prg-tabla { display: grid; grid-template-columns: 150px repeat(7, minmax(120px, 1fr)); gap: 6px; }
 .prg-cab { font-size: 12px; font-weight: 600; color: var(--suave); padding: 2px 4px; text-align: center; }
 .prg-cab b { display: block; font-size: 15px; color: var(--texto); }
-.prg-cab.hoy b { color: var(--acento); }
+.prg-cab.hoy b { color: var(--acento-texto); }
 .prg-cab.festivo, .prg-cab.festivo b { color: var(--bad); }
 .prg-sede { font-size: 13px; font-weight: 600; padding: 8px 6px; display: flex; flex-direction: column; gap: 2px; align-self: stretch; }
 .prg-sede span { font-weight: 400; color: var(--suave); font-size: 12px; }
@@ -222,9 +224,21 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .grupo-sub { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--suave); margin: 8px 0 4px; }
 .radio-fila { display: flex; flex-wrap: wrap; gap: 6px; }
 .radio-fila label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linea); border-radius: 999px; padding: 5px 11px; font-size: 13px; cursor: pointer; background: var(--superficie); }
-.radio-fila label.on { border-color: var(--primario); background: var(--primario); color: #fff; }
-.radio-fila input { display: none; }
+.radio-fila label.on { border-color: var(--primario); background: var(--primario); color: var(--sobre-primario); }
+.radio-fila input { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.radio-fila label { position: relative; }
+.radio-fila label:has(input:focus-visible) { outline: 2px solid var(--acento); outline-offset: 2px; }
+.oculto-visual { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.prg-scroll { overflow-x: auto; padding-bottom: 4px; }
+.prg-tabla { min-width: 980px; }
+.prg-sede, .prg-tabla > div:first-child { position: sticky; left: 0; z-index: 2; background: var(--fondo); }
+.celda-dia .nota { font-size: 11px; color: var(--info); line-height: 1.2; }
+.celda-dia .nota.perdido { color: var(--bad); }
+.celda-dia .nota.repo { color: var(--ok); }
+.punto.novedad { background: transparent; border: 2px dashed var(--bad); }
+.punto.festivo { background: var(--bad); border-radius: 2px; }
+.punto.sin { background: var(--fondo-2); border: 1px solid var(--linea); }
 @media (max-width: 900px) {
-  .prg-tabla { grid-template-columns: 110px repeat(7, minmax(104px, 1fr)); }
-  .prg-scroll { overflow-x: auto; }
+  .prg-tabla { grid-template-columns: 96px repeat(7, minmax(104px, 1fr)); min-width: 840px; }
+  .prg-sede { font-size: 12px; }
 }

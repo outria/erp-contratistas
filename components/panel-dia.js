@@ -12,6 +12,8 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
   const { puede, empresaId } = useApp();
   const [modo, setModo] = useState(null);        // null | {tipo:'intercambio', item} | {tipo:'novedad'}
   const [msg, setMsg] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+  const [fotos, setFotos] = useState({});        // materia prima por novedad, cargada al abrir el detalle
   const tiempos = datos.tiempos ?? [];
   const items = celda?.items ?? [];
   const porTiempo = useMemo(() => { const m = {}; for (const i of items) (m[i.tiempo] ??= []).push(i); return m; }, [items]);
@@ -21,11 +23,28 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
   const contrato = datos.contrato;
 
   const accion = async (fn, ok) => {
-    setMsg(null);
-    try { await fn(); setMsg({ ok: true, t: ok }); setModo(null); onCambio?.(); } catch (e) { setMsg({ ok: false, t: e.message }); }
+    if (ocupado) return;
+    setMsg(null); setOcupado(true);
+    try { const r = await fn(); setMsg({ ok: true, t: typeof r === 'string' ? r : ok }); setModo(null); onCambio?.(); } catch (e) { setMsg({ ok: false, t: e.message }); } finally { setOcupado(false); }
   };
-  const estadoIntercambio = (id, estado) => accion(() => q(sb().rpc('cambiar_estado_intercambio', { p_id: id, p_estado: estado })), `Intercambio ${estado}.`);
-  const decidirNovedad = (id, d) => accion(() => q(sb().rpc('decidir_novedad_servicio', { p_id: id, p_decision: d })), `Novedad ${d === 'aprobar' ? 'aprobada y aplicada al calendario' : d === 'rechazar' ? 'rechazada' : 'anulada'}.`);
+  const estadoIntercambio = (id, estado) => accion(() => q(sb().rpc('cambiar_estado_intercambio', { p_id: id, p_estado: estado })), `Intercambio ${estado.replace('_', ' ')}.`);
+  const decidirNovedad = (id, d) => accion(async () => {
+    const llamar = (desplazar) => q(sb().rpc('decidir_novedad_servicio', { p_id: id, p_decision: d, p_desplazar: desplazar }));
+    let r;
+    try { r = await llamar(false); }
+    catch (e) {
+      if (!/Confirme el desplazamiento/.test(e.message)) throw e;
+      if (!confirm(e.message.replace('Confirme el desplazamiento.', '¿Confirma que ese menu se desplaza?'))) throw new Error('No se aplico la novedad.');
+      r = await llamar(true);
+    }
+    const avisos = (r?.avisos ?? []).join(' ');
+    return `Novedad ${d === 'aprobar' ? 'aprobada y aplicada al calendario' : d === 'rechazar' ? 'rechazada' : 'anulada'}.${avisos ? ' ' + avisos : ''}`;
+  }, '');
+  const verFoto = async (id) => {
+    if (fotos[id]) return;
+    try { const r = await q(sb().from('novedades_servicio').select('materia_prima').eq('id', id).single()); setFotos((f) => ({ ...f, [id]: r.materia_prima ?? { productos: [] } })); }
+    catch (e) { setFotos((f) => ({ ...f, [id]: { error: e.message, productos: [] } })); }
+  };
   const aviso = (id, a) => accion(() => q(sb().rpc('registrar_aviso_novedad', { p_id: id, p_a: a })), 'Aviso registrado.');
 
   return (
@@ -39,12 +58,13 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
             <Estado e={n.estado} />
           </div>
           <div className="small">{n.motivo}{n.sede_id ? '' : ' · todas las sedes'}{n.fecha_hasta && n.fecha_hasta !== n.fecha ? ` · del ${fechaCorta(n.fecha)} al ${fechaCorta(n.fecha_hasta)}` : ''}</div>
-          {n.materia_prima?.productos?.length > 0 && (
-            <details className="small mt8"><summary>Materia prima de ese dia ({n.materia_prima.productos.length} productos, {num(n.materia_prima.raciones)} raciones)</summary>
-              <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>{n.materia_prima.productos.slice(0, 12).map((p) => <li key={p.producto_id}>{p.nombre}: <b>{num(p.cantidad_compra, 1)} {p.unidad_compra}</b></li>)}{n.materia_prima.productos.length > 12 && <li>… y {n.materia_prima.productos.length - 12} mas</li>}</ul>
+          {n.n_productos > 0 && (
+            <details className="small mt8" onToggle={(e) => e.target.open && verFoto(n.id)}><summary>Materia prima de ese dia ({n.n_productos} productos, {num(n.raciones)} raciones)</summary>
+              {!fotos[n.id] ? <div className="muted">Cargando…</div> : fotos[n.id].error ? <div className="muted">{fotos[n.id].error}</div> :
+                <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>{fotos[n.id].productos.slice(0, 15).map((p) => <li key={p.producto_id}>{p.nombre}: <b>{num(p.cantidad_compra, 1)} {p.unidad_compra}</b></li>)}{fotos[n.id].productos.length > 15 && <li>… y {fotos[n.id].productos.length - 15} mas</li>}</ul>}
             </details>)}
           <div className="row gap6 mt8 wrap">
-            {n.estado === 'propuesta' && puedeAprobar && <><button className="btn btn-s btn-p" onClick={() => decidirNovedad(n.id, 'aprobar')}>Aprobar y aplicar</button><button className="btn btn-s" onClick={() => decidirNovedad(n.id, 'rechazar')}>Rechazar</button></>}
+            {n.estado === 'propuesta' && puedeAprobar && <><button className="btn btn-s btn-p" disabled={ocupado} onClick={() => decidirNovedad(n.id, 'aprobar')}>Aprobar y aplicar</button><button className="btn btn-s" disabled={ocupado} onClick={() => decidirNovedad(n.id, 'rechazar')}>Rechazar</button></>}
             {n.estado === 'aprobada' && <>
               <span className={`chip ${n.aviso_entidad_en ? 'ok' : 'warn'}`}>{n.aviso_entidad_en ? 'entidad avisada' : 'falta avisar a la entidad'}</span>
               <span className={`chip ${n.aviso_interventoria_en ? 'ok' : 'warn'}`}>{n.aviso_interventoria_en ? 'interventoria avisada' : 'falta avisar a la interventoria'}</span>
@@ -52,17 +72,17 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
               {!n.aviso_interventoria_en && (puede('M8', 'crear') || puedeAprobar) && <button className="btn btn-xs" onClick={() => aviso(n.id, 'interventoria')}>Registrar aviso a interventoria</button>}
               {!n.aprobada_entidad && puedeAprobar && <button className="btn btn-xs" onClick={() => aviso(n.id, 'aprobada_entidad')}>La entidad aprobo</button>}
               {n.aprobada_entidad && <span className="chip ok">aprobada por la entidad</span>}
-              {puedeAprobar && <button className="btn btn-xs btn-x" onClick={() => { if (confirm('Anular la novedad devuelve el calendario y el menu a como estaban. ¿Continuar?')) decidirNovedad(n.id, 'anular'); }}>Anular</button>}
+              {puedeAprobar && <button className="btn btn-xs btn-x" disabled={ocupado} onClick={() => { if (confirm('Anular la novedad devuelve el calendario y el menu a como estaban. ¿Continuar?')) decidirNovedad(n.id, 'anular'); }}>Anular</button>}
             </>}
           </div>
         </div>
       ))}
 
       {modo?.tipo === 'novedad' ? (
-        <FormNovedad sede={sede} fecha={fecha} contrato={contrato} empresaId={empresaId} onListo={() => accion(async () => {}, 'Novedad propuesta. Operaciones recibira el aviso para aprobarla.')} onCancelar={() => setModo(null)} />
+        <FormNovedad sede={sede} fecha={fecha} contrato={contrato} empresaId={empresaId} puedeContrato={puede('M2', 'crear')} onListo={() => accion(async () => {}, 'Novedad propuesta. La direccion de operaciones recibira el aviso para aprobarla.')} onCancelar={() => setModo(null)} />
       ) : modo?.tipo === 'intercambio' ? (
-        <FormIntercambio sede={sede} fecha={fecha} celda={celda} item={modo.item} contrato={contrato} empresaId={empresaId} tiempos={tiempos}
-          onListo={() => accion(async () => {}, 'Intercambio registrado.')} onCancelar={() => setModo(null)} />
+        <FormIntercambio sede={sede} fecha={fecha} celda={celda} item={modo.item} contrato={contrato} empresaId={empresaId} tiempos={tiempos} puedeContrato={puede('M2', 'crear')}
+          onListo={() => accion(async () => {}, 'Intercambio propuesto.')} onCancelar={() => setModo(null)} />
       ) : (
         <>
           {celda?.servicio && tiempos.map((t) => {
@@ -79,8 +99,8 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
                       {i.origen !== 'ciclo' && <div className={`origen${i.estado === 'propuesto' ? ' propuesto' : ''}`}>{CLASES_INTERCAMBIO[i.clase] ?? 'intercambio'}{i.estado ? ` · ${i.estado.replace(/_/g, ' ')}` : ''}</div>}
                     </span>
                     <span className="row gap4 nowrap">
-                      {i.intercambio_id && i.estado === 'propuesto' && (puede('M2', 'aprobar') || puede('M7', 'aprobar')) && <button className="btn btn-xs" title="Concertar con la poblacion" onClick={() => estadoIntercambio(i.intercambio_id, 'concertado')}>Concertar</button>}
-                      {i.intercambio_id && i.estado === 'concertado' && puede('M2', 'aprobar') && <button className="btn btn-xs" title="La entidad lo aprobo" onClick={() => estadoIntercambio(i.intercambio_id, 'aprobado_entidad')}>Entidad OK</button>}
+                      {i.intercambio_id && i.estado === 'propuesto' && (puede('M2', 'aprobar') || puede('M7', 'aprobar')) && <button className="btn btn-xs" disabled={ocupado} title="Concertar con la poblacion" onClick={() => estadoIntercambio(i.intercambio_id, 'concertado')}>Concertar</button>}
+                      {i.intercambio_id && i.estado === 'concertado' && puede('M2', 'aprobar') && <button className="btn btn-xs" disabled={ocupado} onClick={() => estadoIntercambio(i.intercambio_id, 'aprobado_entidad')}>Aprobado por la entidad</button>}
                       {puedeProponer && <button className="btn btn-xs btn-n" onClick={() => setModo({ tipo: 'intercambio', item: i })}>Cambiar</button>}
                     </span>
                   </div>
@@ -90,7 +110,7 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
           })}
           {celda?.servicio && items.length === 0 && <div className="vacio">Este dia no tiene menu: la sede no tiene ciclo asignado o el ciclo aun no empieza.</div>}
           <div className="row gap8 wrap">
-            {puedeProponer && celda?.servicio && !novedades.some((n) => n.estado === 'propuesta') && <button className="btn" onClick={() => setModo({ tipo: 'novedad' })}>⚠ Reportar dia sin servicio</button>}
+            {puedeProponer && celda?.servicio && !novedades.some((n) => n.estado === 'propuesta') && <button className="btn" onClick={() => setModo({ tipo: 'novedad' })}>Reportar dia sin servicio</button>}
             {puedeProponer && !celda?.servicio && !celda?.sin_servicio && <button className="btn" onClick={() => setModo({ tipo: 'novedad' })}>Registrar novedad</button>}
           </div>
         </>
@@ -100,7 +120,7 @@ export function PanelDia({ sede, fecha, celda, datos, onCerrar, onCambio }) {
 }
 
 // ---- Intercambio desde la celda: sugerencias de la familia, otra opcion en caliente, alcance y vigencia
-function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempos, onListo, onCancelar }) {
+function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempos, puedeContrato, onListo, onCancelar }) {
   const [sug, setSug] = useState(null);
   const [err, setErr] = useState(null);
   const [sel, setSel] = useState(null);
@@ -109,7 +129,6 @@ function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempo
   const [f, setF] = useState({ clase: 'concertado', alcance: 'sede', vigencia: 'dia', hasta: '', motivo: '', soporte: '' });
   const [guardando, setGuardando] = useState(false);
   const tiempo = tiempos.find((t) => t.codigo === item.tiempo);
-  const familiaId = (celda?.items ?? []).length ? null : null;
 
   useEffect(() => {
     q(sb().rpc('sugerir_intercambios', { p_contrato_sede: sede.id, p_fecha: fecha, p_tiempo_comida: tiempo?.id, p_componente: item.componente_id }))
@@ -139,7 +158,8 @@ function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempo
       if ((f.clase === 'temporada' || f.clase === 'contingencia') && f.vigencia === 'ciclo') throw new Error('Temporada y contingencia necesitan fecha final.');
       const fila = {
         empresa_id: empresaId, contrato_id: contrato.id, contrato_sede_id: f.alcance === 'sede' ? sede.id : null,
-        clase: f.clase, tipo_cambio: 'preparacion', dia: f.vigencia === 'todos' ? null : celda.dia, tiempo_comida_id: tiempo?.id, componente_id: item.componente_id,
+        // "solo este dia" se amarra a la fecha (no al dia del ciclo, que puede correrse por una novedad)
+        clase: f.clase, tipo_cambio: 'preparacion', dia: f.vigencia === 'dia' ? null : celda.dia, tiempo_comida_id: tiempo?.id, componente_id: item.componente_id,
         preparacion_nueva_id: prep, vigente_desde: fecha, vigente_hasta: f.vigencia === 'dia' ? fecha : f.vigencia === 'hasta' ? f.hasta : null,
         motivo: f.motivo.trim(), soporte: f.soporte.trim() || null,
       };
@@ -173,7 +193,7 @@ function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempo
         </div>
       ))}
       <button className={`opcion${otra ? ' on' : ''}`} onClick={() => { setOtra(true); setSel(null); }}>
-        <span>＋ Otra opcion que no esta en la lista<span className="sub">Contingencia: lo que se concerto con la poblacion (un chorizo, un embutido…). Queda propuesta para que planeacion la apruebe.</span></span>
+        <span>Otra opcion que no esta en la lista<span className="sub">Contingencia: lo que se concerto con la poblacion (un chorizo, un embutido…). Queda propuesta para que planeacion la apruebe.</span></span>
       </button>
       {otra && (
         <div className="grid g2">
@@ -189,7 +209,7 @@ function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempo
         <Campo l="Alcance">
           <div className="radio-fila">
             <label className={f.alcance === 'sede' ? 'on' : ''}><input type="radio" checked={f.alcance === 'sede'} onChange={() => setF({ ...f, alcance: 'sede' })} />Solo {sede.nombre}</label>
-            <label className={f.alcance === 'contrato' ? 'on' : ''}><input type="radio" checked={f.alcance === 'contrato'} onChange={() => setF({ ...f, alcance: 'contrato' })} />Todas las sedes del contrato</label>
+            {puedeContrato && <label className={f.alcance === 'contrato' ? 'on' : ''}><input type="radio" checked={f.alcance === 'contrato'} onChange={() => setF({ ...f, alcance: 'contrato' })} />Todas las sedes del contrato</label>}
           </div>
         </Campo>
         <Campo l="Vigencia">
@@ -203,15 +223,16 @@ function FormIntercambio({ sede, fecha, celda, item, contrato, empresaId, tiempo
         <Campo l="Motivo" req><textarea rows={2} value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} placeholder={f.clase === 'contingencia' ? 'Derrumbe en la via: no llego la res' : f.clase === 'temporada' ? 'Escasez de pechuga por fenomeno del nino' : 'Concertado con la poblacion en reunion del…'} /></Campo>
         <Campo l="Soporte (oficio, correo, acta)" ayuda="Obligatorio para concertar un intercambio fuera de la ventana de los 15 dias habiles."><input value={f.soporte} onChange={(e) => setF({ ...f, soporte: e.target.value })} placeholder="Oficio 123 del …" /></Campo>
         {f.clase === 'contingencia' && <div className="aviso small">La contingencia rige de inmediato y dispara el aviso interno a planeacion y calidad: recuerde avisar a la entidad y a la interventoria segun el protocolo.</div>}
-        <div className="row end gap8"><button className="btn" onClick={onCancelar}>Cancelar</button><button className="btn btn-p" disabled={guardando || (!sel && !otra)} onClick={guardar}>{guardando ? 'Guardando…' : 'Registrar intercambio'}</button></div>
+        <div className="row end gap8"><button className="btn" onClick={onCancelar}>Cancelar</button><button className="btn btn-p" disabled={guardando || (!sel && !otra)} onClick={guardar}>{guardando ? 'Guardando…' : 'Proponer intercambio'}</button></div>
       </div>
     </div>
   );
 }
 
 // ---- Novedad de servicio: "manana no hay clases"
-function FormNovedad({ sede, fecha, contrato, empresaId, onListo, onCancelar }) {
-  const [f, setF] = useState({ tipo: 'sin_clases', hasta: fecha, alcance: 'sede', accion: contrato?.dias_atencion === 'todos' ? 'perder' : 'correr', destino: sumarDias(fecha, 7), motivo: '', soporte: '' });
+function FormNovedad({ sede, fecha, contrato, empresaId, puedeContrato, onListo, onCancelar }) {
+  const seCorre = contrato?.se_corre !== false;
+  const [f, setF] = useState({ tipo: 'sin_clases', hasta: fecha, alcance: 'sede', accion: seCorre ? 'correr' : 'trasladar', destino: sumarDias(fecha, 7), motivo: '', soporte: '' });
   const [err, setErr] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const guardar = async () => {
@@ -238,21 +259,23 @@ function FormNovedad({ sede, fecha, contrato, empresaId, onListo, onCancelar }) 
       <Campo l="Alcance">
         <div className="radio-fila">
           <label className={f.alcance === 'sede' ? 'on' : ''}><input type="radio" checked={f.alcance === 'sede'} onChange={() => setF({ ...f, alcance: 'sede' })} />Solo {sede.nombre}</label>
-          <label className={f.alcance === 'contrato' ? 'on' : ''}><input type="radio" checked={f.alcance === 'contrato'} onChange={() => setF({ ...f, alcance: 'contrato' })} />Todas las sedes (paro, orden publico)</label>
+          {puedeContrato && <label className={f.alcance === 'contrato' ? 'on' : ''}><input type="radio" checked={f.alcance === 'contrato'} onChange={() => setF({ ...f, alcance: 'contrato' })} />Todas las sedes (paro, orden publico)</label>}
         </div>
       </Campo>
       <Campo l="Que pasa con el menu y la materia prima">
         <div className="stack gap6">
-          {Object.entries(ACCIONES_NOVEDAD).map(([k, v]) => (
+          {!seCorre && <div className="small muted">En este contrato el ciclo avanza todos los dias, asi que el menu no se corre: se traslada a una fecha o se pierde.</div>}
+          {Object.entries(ACCIONES_NOVEDAD).filter(([k]) => k !== 'correr' || seCorre).map(([k, v]) => (
             <button key={k} className={`opcion${f.accion === k ? ' on' : ''}`} onClick={() => setF({ ...f, accion: k })}>
               <span>{v}<span className="sub">{k === 'correr' ? 'El menu de ese dia se sirve el siguiente dia de servicio y todo lo demas se corre. Lo normal en PAE: no se pierde nada.' : k === 'trasladar' ? 'Ese menu se sirve en la fecha que escoja (dentro de 2 o 3 dias o la semana siguiente); los demas dias no se mueven.' : 'El ciclo sigue como si el dia se hubiera servido; la materia prima queda para redistribuir.'}</span></span>
             </button>))}
         </div>
       </Campo>
-      {f.accion === 'trasladar' && <Campo l="Fecha en que se sirve ese menu" req><input type="date" value={f.destino} min={sumarDias(fecha, 1)} onChange={(e) => setF({ ...f, destino: e.target.value })} style={{ maxWidth: 200 }} /></Campo>}
+      {f.accion === 'trasladar' && <Campo l="Fecha en que se sirve ese menu" req ayuda="Si esa fecha no tiene servicio (sabado, festivo) se habilita como jornada de reposicion. Si ya tiene menu, al aprobar se le pedira confirmar que ese menu se desplaza."><input type="date" value={f.destino} min={sumarDias(fecha, 1)} onChange={(e) => setF({ ...f, destino: e.target.value })} style={{ maxWidth: 200 }} /></Campo>}
+      {f.accion === 'trasladar' && f.hasta !== fecha && <div className="aviso small">Trasladar aplica a un solo dia: registre una novedad por cada dia.</div>}
       <Campo l="Motivo" req><textarea rows={2} value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} placeholder="El rector avisa que manana no hay clases por jornada deportiva" /></Campo>
       <Campo l="Soporte (circular, correo del rector, comunicado)"><input value={f.soporte} onChange={(e) => setF({ ...f, soporte: e.target.value })} /></Campo>
-      <div className="row end gap8"><button className="btn" onClick={onCancelar}>Cancelar</button><button className="btn btn-p" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : 'Proponer novedad'}</button></div>
+      <div className="row end gap8"><button className="btn" onClick={onCancelar}>Cancelar</button><button className="btn btn-p" disabled={guardando || (f.accion === 'trasladar' && f.hasta !== fecha)} onClick={guardar}>{guardando ? 'Guardando…' : 'Proponer novedad'}</button></div>
     </div>
   );
 }

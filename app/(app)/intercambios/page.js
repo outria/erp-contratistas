@@ -17,7 +17,7 @@ export default function Intercambios() {
   const puedeAprobar = puede('M2', 'aprobar') || puede('M7', 'aprobar');
   const act = async (fn, ok) => { setMsg(null); try { await fn(); setMsg({ ok: true, t: ok }); x.recargar(); n.recargar(); } catch (e) { setMsg({ ok: false, t: e.message }); } };
   const estado = (id, e) => act(() => q(sb().rpc('cambiar_estado_intercambio', { p_id: id, p_estado: e })), `Intercambio ${e.replace('_', ' ')}.`);
-  const dec = (id, d) => act(() => q(sb().rpc('decidir_novedad_servicio', { p_id: id, p_decision: d })), `Novedad ${d === 'aprobar' ? 'aprobada' : d}.`);
+  const dec = (id, d) => { if (d === 'anular' && !confirm('Anular devuelve el calendario y el menu a como estaban. ¿Continuar?')) return; act(() => q(sb().rpc('decidir_novedad_servicio', { p_id: id, p_decision: d, p_desplazar: false })), `Novedad ${d === 'aprobar' ? 'aprobada' : d === 'rechazar' ? 'rechazada' : 'anulada'}.`); };
 
   const colsX = [
     { k: 'sede_nombre', t: 'Sede' },
@@ -28,9 +28,9 @@ export default function Intercambios() {
     { t: 'Estado', r: (r) => <><Estado e={r.estado} />{r.aplica_hoy && r.estado === 'propuesto' ? <div className="small muted">rige (contingencia)</div> : null}</> },
     { t: '', r: (r) => <span className="row gap4 nowrap end">
         {r.estado === 'propuesto' && puedeAprobar && <button className="btn btn-xs" onClick={() => estado(r.id, 'concertado')}>Concertar</button>}
-        {r.estado === 'concertado' && puede('M2', 'aprobar') && <button className="btn btn-xs" onClick={() => estado(r.id, 'aprobado_entidad')}>Entidad OK</button>}
+        {r.estado === 'concertado' && puede('M2', 'aprobar') && <button className="btn btn-xs" onClick={() => estado(r.id, 'aprobado_entidad')}>Aprobado por la entidad</button>}
         {['propuesto', 'concertado'].includes(r.estado) && puede('M2', 'aprobar') && <button className="btn btn-xs" onClick={() => estado(r.id, 'rechazado')}>Rechazar</button>}
-        {['propuesto', 'concertado', 'aprobado_entidad'].includes(r.estado) && puede('M2', 'aprobar') && <button className="btn btn-xs btn-x" onClick={() => estado(r.id, 'anulado')}>Anular</button>}
+        {['propuesto', 'concertado', 'aprobado_entidad'].includes(r.estado) && puede('M2', 'aprobar') && <button className="btn btn-xs btn-x" onClick={() => { if (confirm('¿Anular este intercambio?')) estado(r.id, 'anulado'); }}>Anular</button>}
       </span> },
   ];
   const colsN = [

@@ -24,14 +24,16 @@ export function rotuloSemana(lunes) {
 }
 
 // Selector de semanas relativas: -2 -1 | Actual | +1 +2 +3 ... y "agregar semana"
-export function SelectorSemanas({ offsets, onChange }) {
+export function SelectorSemanas({ offsets, onChange, maxSemanas = 10 }) {
   const min = Math.min(...offsets), max = Math.max(...offsets);
+  const span = max - min + 1;
   const alternar = (o) => {
     const s = new Set(offsets);
     if (s.has(o)) { if (s.size > 1) s.delete(o); } else s.add(o);
     onChange([...s].sort((a, b) => a - b));
   };
-  const rotulo = (o) => o === 0 ? 'Semana actual' : o < 0 ? `Semana ${o}` : `Semana +${o}`;
+  const hoy = hoyISO();
+  const rotulo = (o) => { const l = semanasARango([o], hoy).desde; return `Semana ${semanaISO(l)} · ${rotuloSemana(l)}`; };
   const visibles = [];
   for (let o = Math.min(min, -1); o <= Math.max(max, 1); o++) visibles.push(o);
   return (
@@ -39,8 +41,8 @@ export function SelectorSemanas({ offsets, onChange }) {
       <div className="prg-semanas" role="group" aria-label="Semanas a mostrar">
         {visibles.map((o) => <button key={o} className={`${offsets.includes(o) ? 'on' : ''}${o === 0 ? ' hoy' : ''}`} onClick={() => alternar(o)} title={rotulo(o)}>{o === 0 ? 'Actual' : o > 0 ? `+${o}` : o}</button>)}
       </div>
-      <button className="btn btn-s" onClick={() => onChange([...offsets, max + 1].sort((a, b) => a - b))}>＋ Agregar semana</button>
-      {min > -8 && <button className="btn btn-s" onClick={() => onChange([min - 1, ...offsets].sort((a, b) => a - b))} title="Ver una semana anterior">← Anterior</button>}
+      <button className="btn btn-s" disabled={span >= maxSemanas} title={span >= maxSemanas ? `Maximo ${maxSemanas} semanas; quite una para agregar otra` : 'Agrega la semana siguiente a la ultima mostrada'} onClick={() => onChange([...offsets, max + 1].sort((a, b) => a - b))}>Agregar semana siguiente</button>
+      <button className="btn btn-s" disabled={span >= maxSemanas} onClick={() => onChange([min - 1, ...offsets].sort((a, b) => a - b))} title="Agrega la semana anterior a la primera mostrada">Semana anterior</button>
     </div>
   );
 }
@@ -51,16 +53,26 @@ function resumenTiempo(items) {
   return p;
 }
 
-export function CeldaDia({ celda, tiempos, novedad, sel, onClick, hoy, intercambiosCount = 0 }) {
+const fechaDM = (iso) => { if (!iso) return ''; const d = desdeISO(iso); return `${d.getDate()}/${d.getMonth() + 1}`; };
+
+export function CeldaDia({ celda, tiempos, novedad, novedadAplicada, sel, onClick, hoy }) {
   if (!celda) return <div className="celda-dia sin" />;
   const pasado = celda.fecha < hoy;
   if (!celda.servicio) {
-    const motivo = celda.sin_servicio?.motivo ?? (celda.items?.length === 0 ? 'Sin servicio' : '');
+    const ss = celda.sin_servicio;
+    const motivo = ss?.motivo ?? '';
+    // que paso con el menu de ese dia
+    let nota = null;
+    if (ss && novedadAplicada) {
+      nota = novedadAplicada.accion === 'correr' ? { t: 'el menu se corre al siguiente dia', c: '' }
+        : novedadAplicada.accion === 'trasladar' ? { t: `menu trasladado al ${fechaDM(novedadAplicada.fecha_destino)}`, c: 'repo' }
+        : { t: 'menu perdido (el ciclo sigue)', c: 'perdido' };
+    } else if (ss?.cuenta_ciclo) nota = { t: 'menu perdido (el ciclo sigue)', c: 'perdido' };
     return (
-      <button className={`celda-dia sin${sel ? ' sel' : ''}`} onClick={onClick} title={motivo || 'Dia sin servicio'}>
-        <div className="celda-menu"><span className="n">sin servicio</span>{novedad && <span className={`punto ${novedad.estado === 'propuesta' ? 'propuesto' : 'contingencia'}`} />}</div>
-        <div className="small" style={{ lineHeight: 1.25 }}>{motivo || 'Sin servicio'}</div>
-        {celda.sin_servicio?.cuenta_ciclo === false && <div className="small muted">el menu se corre</div>}
+      <button className={`celda-dia sin${sel ? ' sel' : ''}`} onClick={onClick} title={motivo || 'Dia sin servicio'} aria-label={`${celda.fecha}: sin servicio. ${motivo}`}>
+        <div className="celda-menu"><span className="n">sin servicio</span>{novedad && <span className="punto novedad" aria-label="novedad propuesta" />}</div>
+        {motivo && <div className="small" style={{ lineHeight: 1.25 }}>{motivo}</div>}
+        {nota && <div className={`nota ${nota.c}`}>{nota.t}</div>}
       </button>
     );
   }
@@ -68,8 +80,10 @@ export function CeldaDia({ celda, tiempos, novedad, sel, onClick, hoy, intercamb
   for (const i of celda.items ?? []) (porTiempo[i.tiempo] ??= []).push(i);
   const clases = new Set((celda.items ?? []).filter((i) => i.clase).map((i) => (i.estado === 'propuesto' && i.clase !== 'contingencia') ? 'propuesto' : i.clase));
   return (
-    <button className={`celda-dia${sel ? ' sel' : ''}${pasado ? ' pasado' : ''}`} onClick={onClick}>
-      <div className="celda-menu"><span className="n">Menu {celda.dia ?? '·'}</span>{novedad && <span className="punto propuesto" title="Novedad propuesta" />}</div>
+    <button className={`celda-dia${sel ? ' sel' : ''}${pasado ? ' pasado' : ''}`} onClick={onClick} aria-label={`${celda.fecha}: menu ${celda.dia ?? ''}`}>
+      <div className="celda-menu"><span className="n">Menu {celda.dia ?? '·'}</span>{novedad && <span className="punto novedad" title="Novedad propuesta para este dia" aria-label="novedad propuesta" />}</div>
+      {celda.excepcion?.tipo === 'dia_forzado' && <div className="nota repo">{celda.excepcion.desde ? `trasladado del ${fechaDM(celda.excepcion.desde)}` : 'dia forzado'}</div>}
+      {celda.reposicion && <div className="nota repo">jornada de reposicion</div>}
       {tiempos.map((t) => {
         const its = porTiempo[t.codigo];
         if (!its) return null;
@@ -98,8 +112,10 @@ export function Semana({ lunes, sedes, celdas, tiempos, novedades, dias, hoy, se
               <div className="prg-sede">{s.nombre}<span>{s.ciudad}{s.cupos ? ` · ${s.cupos} cupos` : ''}</span></div>
               {fechas.map((f) => {
                 const c = celdas.get(`${s.id}|${f}`);
-                const nov = novedades.find((n) => n.fecha <= f && (n.fecha_hasta ?? n.fecha) >= f && (!n.sede_id || n.sede_id === s.id) && n.estado === 'propuesta');
-                return <CeldaDia key={f} celda={c} tiempos={tiempos} novedad={nov} hoy={hoy} sel={sel?.sede_id === s.id && sel?.fecha === f} onClick={() => onCelda(s, f, c)} />;
+                const enFecha = novedades.filter((n) => n.fecha <= f && (n.fecha_hasta ?? n.fecha) >= f && (!n.sede_id || n.sede_id === s.id));
+                const nov = enFecha.find((n) => n.estado === 'propuesta');
+                const apl = enFecha.find((n) => n.estado === 'aprobada' && (c?.sin_servicio?.novedad_id ? n.id === c.sin_servicio.novedad_id : true));
+                return <CeldaDia key={f} celda={c} tiempos={tiempos} novedad={nov} novedadAplicada={apl} hoy={hoy} sel={sel?.sede_id === s.id && sel?.fecha === f} onClick={() => onCelda(s, f, c)} />;
               })}
             </div>
           ))}
@@ -111,13 +127,17 @@ export function Semana({ lunes, sedes, celdas, tiempos, novedades, dias, hoy, se
 
 export function Leyenda() {
   return (
-    <div className="leyenda">
+    <div className="leyenda" aria-label="Leyenda">
+      <span><b style={{ color: 'var(--info)' }}>Texto azul</b>: menu distinto al ciclo oficial</span>
       <span><i className="punto concertado" /> concertado</span>
       <span><i className="punto temporada" /> temporada</span>
       <span><i className="punto contingencia" /> contingencia</span>
       <span><i className="punto especial" /> especial</span>
-      <span><i className="punto propuesto" /> propuesto (no rige todavia)</span>
-      <span style={{ color: 'var(--info)', fontWeight: 600 }}>texto azul</span><span>= menu distinto al ciclo oficial</span>
+      <span><i className="punto propuesto" /> intercambio propuesto (no rige)</span>
+      <span><i className="punto novedad" /> novedad por aprobar</span>
+      <span><i className="punto sin" /> sin servicio</span>
+      <span><i className="punto festivo" /> festivo</span>
+      <span><b style={{ color: 'var(--acento-texto)' }}>Fecha ambar</b>: hoy</span>
     </div>
   );
 }

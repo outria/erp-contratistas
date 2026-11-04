@@ -87,14 +87,18 @@ export function Tabla({ cols, filas, idKey = 'id', vacio = 'Sin datos', pie, onF
 
 // Panel lateral deslizante (detalle de una celda, formulario largo) que no tapa toda la pantalla
 export function Panel({ titulo, sub, onCerrar, children, acciones }) {
+  const ref = useRef(null);
   useEffect(() => {
+    const antes = document.activeElement;
+    ref.current?.focus();
     const esc = (e) => { if (e.key === 'Escape') onCerrar?.(); };
-    document.addEventListener('keydown', esc); return () => document.removeEventListener('keydown', esc);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('keydown', esc); antes?.focus?.(); };
   }, [onCerrar]);
   return (
     <>
       <div className="panel-fondo" onClick={onCerrar} />
-      <aside className="panel-lateral" role="dialog" aria-label={titulo}>
+      <aside className="panel-lateral" role="dialog" aria-modal="true" aria-label={titulo} tabIndex={-1} ref={ref}>
         <header>
           <div><h2 className="m0">{titulo}</h2>{sub && <div className="small muted">{sub}</div>}</div>
           <div className="row gap6">{acciones}<button className="btn btn-s" onClick={onCerrar} aria-label="Cerrar">✕</button></div>

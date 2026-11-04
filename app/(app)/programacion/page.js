@@ -24,7 +24,7 @@ export default function Programacion() {
   const [propuestos, setPropuestos] = useState(false);
   const [sel, setSel] = useState(null);
 
-  const contratos = useCarga(() => q(sb().from('contratos').select('id, numero, modalidad, estado, fecha_inicio, fecha_fin_inicial').eq('empresa_id', empresaId).in('estado', ['vigente', 'borrador', 'suspendido']).order('estado').order('numero')), [empresaId]);
+  const contratos = useCarga(() => q(sb().from('contratos').select('id, numero, modalidad, estado, fecha_inicio, fecha_fin_inicial').eq('empresa_id', empresaId).in('estado', ['vigente', 'borrador', 'suspendido']).order('numero')).then((cs) => [...cs].sort((a, b) => (a.estado === 'vigente' ? 0 : 1) - (b.estado === 'vigente' ? 0 : 1))), [empresaId]);
   useEffect(() => { if (contratos.datos?.length && !contratos.datos.find((c) => c.id === contratoId)) setContratoId(contratos.datos[0].id); }, [contratos.datos, contratoId]);
   useEffect(() => { guardar('sc_prg_semanas', offsets); }, [offsets]);
   useEffect(() => { setSedesSel([]); setSel(null); }, [contratoId]);
@@ -48,6 +48,7 @@ export default function Programacion() {
   }, [params, datos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendientes = novedades.filter((n) => n.estado === 'propuesta').length;
+  const muchasSedes = (datos?.total_sedes ?? 0) > 20 && sedesSel.length === 0;
   const propuestosN = (datos?.celdas ?? []).reduce((a, c) => a + (c.items ?? []).filter((i) => i.estado === 'propuesto').length, 0);
 
   return (
@@ -65,7 +66,7 @@ export default function Programacion() {
       {contrato && (
         <>
           <div className="prg-barra">
-            <SelectorSemanas offsets={offsets} onChange={setOffsets} />
+            <SelectorSemanas offsets={offsets} onChange={setOffsets} maxSemanas={muchasSedes ? 2 : 10} />
             {sedes.length > 1 && (
               <select value={sedesSel[0] ?? ''} onChange={(e) => setSedesSel(e.target.value ? [e.target.value] : [])} title="Filtrar una sede">
                 <option value="">Todas las sedes ({sedes.length})</option>
@@ -77,6 +78,7 @@ export default function Programacion() {
             {propuestosN > 0 && <span className="chip warn">{propuestosN} intercambio{propuestosN > 1 ? 's' : ''} propuesto{propuestosN > 1 ? 's' : ''}</span>}
             {d.cargando && <span className="muted small">actualizando…</span>}
           </div>
+          {muchasSedes && <div className="aviso info small mb12">Este contrato tiene {datos.total_sedes} sedes: para ver mas de dos semanas filtre una sede.</div>}
           <Leyenda />
           <div className="mt12" />
           {d.cargando && !datos ? <Cargando texto="Armando la programacion…" /> : !datos ? null : sedes.length === 0 ? <Vacio>El contrato no tiene sedes activas.</Vacio> : (
