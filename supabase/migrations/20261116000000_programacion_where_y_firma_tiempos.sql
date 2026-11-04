@@ -154,3 +154,11 @@ begin
 end $$;
 revoke execute on function public.programacion(uuid, date, date, uuid[], boolean, boolean) from public, anon;
 grant execute on function public.programacion(uuid, date, date, uuid[], boolean, boolean) to authenticated;
+
+-- Demo PAE mas realista (lo que cuenta Osvaldo): cada colegio tiende a una sola modalidad. Tecnica y Megacolegio solo RPS,
+-- Rural solo RI (no tiene cocina), Normal mezcla RPS y complementos.
+delete from public.cupos cu using public.contrato_sedes cs, public.sedes s, public.tiempos_comida t, public.empresas e
+ where cu.contrato_sede_id = cs.id and cs.sede_id = s.id and cu.tiempo_comida_id = t.id and e.id = cu.empresa_id and e.nit = '900000002'
+   and ((s.nombre in ('IE Tecnica de Practica', 'Megacolegio de Practica') and t.codigo <> 'RPS')
+     or (s.nombre = 'IE Rural de Practica' and t.codigo <> 'RI')
+     or (s.nombre = 'IE Normal de Practica' and t.codigo = 'RI'));
