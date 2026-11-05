@@ -16,7 +16,7 @@ const MENU = [
   { g: 'Contrato y planeacion' },
   { h: '/contratos', t: 'Contratos y anexos', m: 'M1' },
   { h: '/programacion', t: 'Programacion de menus', m: ['M2', 'M3', 'M7'] },
-  { h: '/minutas', t: 'Minutas y calendario', m: 'M2', pronto: true },
+  { h: '/minutas', t: 'Minutas y calendario', m: ['M2', 'M3', 'M7'] },
   { h: '/cupos', t: 'Cupos y dietas', m: ['M2', 'M3', 'M7'] },
   { h: '/explosion', t: 'Explosion de materiales', m: ['M2', 'M3'] },
   { h: '/intercambios', t: 'Intercambios y novedades', m: ['M2', 'M7'] },

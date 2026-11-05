@@ -201,6 +201,7 @@ function Detalle({ id, progreso, onRecalcular, puede, unidad, setMsg }) {
       <div className="tabs">
         <button className={tab === 'productos' ? 'on' : ''} onClick={() => setTab('productos')}>Productos ({r.datos.productos.length})</button>
         <button className={tab === 'sedes' ? 'on' : ''} onClick={() => setTab('sedes')}>Por sede ({r.datos.por_sede.length})</button>
+        <button className={tab === 'establecimiento' ? 'on' : ''} onClick={() => setTab('establecimiento')}>Por establecimiento (despacho)</button>
         <button className={tab === 'dias' ? 'on' : ''} onClick={() => setTab('dias')}>Por dia</button>
         <button className={tab === 'alertas' ? 'on' : ''} onClick={() => setTab('alertas')}>Alertas</button>
       </div>
@@ -224,6 +225,7 @@ function Detalle({ id, progreso, onRecalcular, puede, unidad, setMsg }) {
           </>
         )}
         {tab === 'sedes' && <Tabla cols={[{ t: 'Sede', k: 'sede' }, { t: 'Raciones', n: true, r: (s) => num(s.raciones) }, { t: 'Dias con servicio', n: true, k: 'dias' }, { t: 'Promedio por dia', n: true, r: (s) => num(s.promedio) }]} filas={r.datos.por_sede} idKey="sede_id" />}
+        {tab === 'establecimiento' && <PorEstablecimiento id={id} e={e} />}
         {tab === 'dias' && (
           <div className="stack gap4">
             {r.datos.por_dia.map((d) => (
@@ -262,5 +264,44 @@ function DetalleProducto({ id, prod, onCerrar }) {
         </>
       )}
     </Panel>
+  );
+}
+
+// Requerimiento por establecimiento: lo que bodega debe alistar y despachar a cada sede, con el tramo de menus que cubre
+function PorEstablecimiento({ id, e }) {
+  const d = useCarga(() => q(sb().rpc('explosion_por_sede', { p_explosion: id })), [id, e?.calculada_en]);
+  const [abierta, setAbierta] = useState(null);
+  const descargar = async () => {
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Sede', 'Ciudad', 'Desde', 'Hasta', 'Dias', 'Menus (del - al)', 'Raciones', 'Productos'], ...d.datos.map((s) => [s.sede, s.ciudad, s.desde, s.hasta, s.dias, `${s.menu_desde} - ${s.menu_hasta}`, s.raciones, s.productos.length])]), 'Resumen');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Sede', 'Codigo', 'Producto', 'Categoria', 'Cantidad', 'Unidad', 'Perecedero', 'Desde', 'Hasta', 'Menus'], ...d.datos.flatMap((s) => s.productos.map((p) => [s.sede, p.codigo, p.nombre, p.categoria, p.cantidad_compra, p.unidad_compra, p.perecedero ? 'si' : 'no', s.desde, s.hasta, `${s.menu_desde} - ${s.menu_hasta}`]))]), 'Detalle por sede');
+    for (const s of d.datos.slice(0, 60)) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[`Requerimiento ${e.codigo} · ${s.sede}`], [`Del ${s.desde} al ${s.hasta} · menus ${s.menu_desde} al ${s.menu_hasta} · ${s.raciones} raciones`], [], ['Codigo', 'Producto', 'Categoria', 'Cantidad', 'Unidad', 'Perecedero'], ...s.productos.map((p) => [p.codigo, p.nombre, p.categoria, p.cantidad_compra, p.unidad_compra, p.perecedero ? 'si' : 'no'])]), s.sede.replace(/[\\/?*\[\]:]/g, ' ').slice(0, 31));
+    }
+    XLSX.writeFile(wb, `Despacho_${e.codigo}.xlsx`);
+  };
+  if (!d.datos) return <Cargando />;
+  return (
+    <>
+      <div className="row between mb12 wrap">
+        <span className="small muted">Lo que hay que alistar y enviar a cada establecimiento para este periodo, con el tramo de menus que cubre. Es el insumo del picking en bodega (modulo de logistica) y de las entregas directas de proveedor en sede.</span>
+        <button className="btn btn-s" onClick={descargar}>Descargar Excel (una hoja por sede)</button>
+      </div>
+      <Tabla cols={[
+        { t: 'Establecimiento', r: (s) => <><b>{s.sede}</b><div className="small muted">{s.ciudad}</div></> },
+        { t: 'Periodo', r: (s) => <>{fechaCorta(s.desde)} a {fechaCorta(s.hasta)}<div className="small muted">{s.dias} dias con servicio</div></> },
+        { t: 'Menus', r: (s) => <>del <b>{s.menu_desde}</b> al <b>{s.menu_hasta}</b><div className="small muted">{s.menus} menus distintos</div></> },
+        { t: 'Raciones', n: true, r: (s) => num(s.raciones) },
+        { t: 'Productos', n: true, r: (s) => s.productos.length },
+        { t: 'Perecederos', n: true, r: (s) => s.productos.filter((p) => p.perecedero).length },
+        { t: '', r: (s) => <button className="btn btn-xs" onClick={() => setAbierta(s)}>Ver lista</button> },
+      ]} filas={d.datos} idKey="sede_id" vacio="Sin detalle todavia." />
+      {abierta && (
+        <Panel titulo={abierta.sede} sub={`Del ${fechaCorta(abierta.desde)} al ${fechaCorta(abierta.hasta)} · menus ${abierta.menu_desde} al ${abierta.menu_hasta} · ${num(abierta.raciones)} raciones`} onCerrar={() => setAbierta(null)}>
+          <Tabla cols={[{ t: 'Producto', r: (p) => <>{p.nombre}<div className="small muted">{CATEGORIAS[p.categoria] ?? p.categoria}{p.perecedero ? ' · perecedero' : ''}</div></> }, { t: 'Cantidad', n: true, r: (p) => <b>{num(p.cantidad_compra, p.cantidad_compra < 10 ? 2 : 1)} {p.unidad_compra}</b> }]} filas={abierta.productos} idKey="producto_id" />
+        </Panel>
+      )}
+    </>
   );
 }

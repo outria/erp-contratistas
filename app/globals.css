@@ -259,3 +259,28 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .grid-cupos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 10px 0; }
 input.cambiado { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento-suave); }
 .modal.ancho { width: min(1100px, 100%); }
+
+/* ---- Minutas y calendario ---- */
+.t-ciclo th, .t-ciclo td { font-size: 12px; min-width: 110px; vertical-align: top; }
+.t-ciclo td.celda-ciclo.editable { cursor: pointer; }
+.t-ciclo td.celda-ciclo.editable:hover { background: var(--acento-suave); }
+.t-ciclo td.celda-ciclo.vacia { background: var(--warn-bg); }
+.t-ciclo select { max-width: 220px; font-size: 12px; }
+.t-gram input { font-size: 13px; }
+.cal-meses { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.cal-mes h4 { margin: 0 0 8px; text-transform: capitalize; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-cab { font-size: 11px; color: var(--suave); text-align: center; font-weight: 700; }
+.cal-dia { border: 1px solid var(--linea); border-radius: 6px; background: var(--superficie); font: inherit; font-size: 12px; padding: 6px 0; cursor: pointer; color: var(--texto); }
+.cal-dia.servicio { background: var(--ok-bg); }
+.cal-dia.sin { background: var(--fondo-2); color: var(--suave); }
+.cal-dia.cerrado { background: var(--bad-bg); color: var(--bad); font-weight: 700; }
+.cal-dia.extra { background: var(--info-bg); color: var(--info); font-weight: 700; }
+.cal-dia.parcial { background: var(--warn-bg); color: var(--warn); }
+.cal-dia.festivo { text-decoration: underline dotted; }
+.cal-dia.hoy { outline: 2px solid var(--acento); }
+.cal-dia.sel { box-shadow: inset 0 0 0 2px var(--primario); }
+.cal-leyenda { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--linea); vertical-align: middle; }
+.cal-leyenda.servicio { background: var(--ok-bg); } .cal-leyenda.sin { background: var(--fondo-2); } .cal-leyenda.cerrado { background: var(--bad-bg); } .cal-leyenda.extra { background: var(--info-bg); } .cal-leyenda.parcial { background: var(--warn-bg); }
+.t-partes th { font-size: 11px; }
+.bad { color: var(--bad); }
