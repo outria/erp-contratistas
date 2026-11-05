@@ -285,3 +285,15 @@ input.cambiado { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento
 .t-partes th { font-size: 11px; }
 .bad { color: var(--bad); }
 .warn { color: var(--warn); }
+
+/* M3 · Ordenes de compra */
+.btn-d { background: var(--bad-bg); color: var(--bad); border-color: var(--bad-bg); }
+.btn-d:hover { background: var(--bad); color: #fff; }
+.t-oc tr.apagado td { opacity: 0.55; }
+.t-oc tr.sin-cupos td { background: var(--warn-bg); }
+.kpi.warn .v { color: var(--warn); }
+.card.plano { box-shadow: none; background: var(--fondo-2); }
+.right { text-align: right; }
+.oc-totales > div { text-align: right; min-width: 110px; }
+.print-only { display: none; }
+@media print { .print-only { display: block; } .oc-doc { border: none; } .tabs, .aviso { display: none !important; } }
