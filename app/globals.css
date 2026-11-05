@@ -284,3 +284,4 @@ input.cambiado { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento
 .cal-leyenda.servicio { background: var(--ok-bg); } .cal-leyenda.sin { background: var(--fondo-2); } .cal-leyenda.cerrado { background: var(--bad-bg); } .cal-leyenda.extra { background: var(--info-bg); } .cal-leyenda.parcial { background: var(--warn-bg); }
 .t-partes th { font-size: 11px; }
 .bad { color: var(--bad); }
+.warn { color: var(--warn); }

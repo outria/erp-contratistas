@@ -47,10 +47,12 @@ const ESTADOS = {
   parcial: 'warn', calculada: 'info', calculando: 'warn', aprobada: 'ok', aprobado: 'ok', enviada_compras: 'ok',
   // mapeo maestro
   sugerido: 'warn',
+  // compras: homologacion, evaluacion
+  en_proceso: 'warn', homologado: 'ok', condicionado: 'warn', confiable: 'ok', aceptable: 'info', no_confiable: 'bad', bloqueado: 'bad',
 };
 const NOMBRES = {
   aprobado_entidad: 'aprobada por la entidad', enviada_compras: 'enviada a compras', retirada: 'retirada', parcial: 'parcial (faltan tramos)', calculada: 'calculada', calculando: 'calculando…',
-  propuesto: 'propuesto', concertado: 'concertado', rechazado: 'rechazado', sugerido: 'sugerido, por aprobar',
+  propuesto: 'propuesto', concertado: 'concertado', rechazado: 'rechazado', sugerido: 'sugerido, por aprobar', en_proceso: 'en proceso', no_confiable: 'no confiable',
 };
 export function Estado({ e }) {
   return <span className={`chip ${ESTADOS[e] ?? ''}`}>{NOMBRES[e] ?? String(e ?? '').replace(/_/g, ' ')}</span>;
