@@ -21,6 +21,7 @@ const MENU = [
   { h: '/explosion', t: 'Explosion de materiales', m: ['M2', 'M3'] },
   { h: '/intercambios', t: 'Intercambios y novedades', m: ['M2', 'M7'] },
   { g: 'Compras' },
+  { h: '/negociacion', t: 'Negociacion por volumen', m: ['M3', 'M2'] },
   { h: '/proveedores', t: 'Proveedores y homologacion', m: 'M3', pronto: true },
   { h: '/precios', t: 'Master de precios y ofertas', m: 'M3', pronto: true },
   { h: '/ordenes-compra', t: 'Ordenes de compra', m: 'M3', pronto: true },
