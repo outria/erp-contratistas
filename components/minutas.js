@@ -254,7 +254,7 @@ export function Partes({ contratoId, datos, hoy, unidad, puedeEditar }) {
     setGuardando(s.id); setMsg(null);
     try {
       const items = cols.filter(({ t, g }) => porTiempo ? cupo(s, g, t) > 0 || vals[`${s.id}|${g.id}|${t?.id ?? ''}`] !== undefined : true)
-        .map(({ t, g }) => ({ grupo_id: g.id, tiempo_id: t?.id ?? null, variante_id: s.variante_id ?? null, cantidad: vals[`${s.id}|${g.id}|${t?.id ?? ''}`] === '' || vals[`${s.id}|${g.id}|${t?.id ?? ''}`] == null ? null : Number(vals[`${s.id}|${g.id}|${t?.id ?? ''}`]) }));
+        .map(({ t, g }) => ({ grupo_id: g.id, tiempo_id: t?.id ?? null, variante_id: null, cantidad: vals[`${s.id}|${g.id}|${t?.id ?? ''}`] === '' || vals[`${s.id}|${g.id}|${t?.id ?? ''}`] == null ? null : Number(vals[`${s.id}|${g.id}|${t?.id ?? ''}`]) }));
       await q(sb().rpc('guardar_parte_diario', { p_contrato_sede: s.id, p_fecha: fecha, p_items: items, p_fuente: 'parte diario' }));
       setMsg({ ok: true, t: `Parte de ${s.nombre} del ${fechaCorta(fecha)} guardado.` }); d.recargar();
     } catch (e) { setMsg({ ok: false, t: e.message }); }
@@ -262,6 +262,10 @@ export function Partes({ contratoId, datos, hoy, unidad, puedeEditar }) {
   };
   const copiarCupos = (s) => setVals((o) => { const n = { ...o }; for (const { t, g } of cols) { const c = cupo(s, g, t); if (c > 0) n[`${s.id}|${g.id}|${t?.id ?? ''}`] = c; } return n; });
   const sedes = (d.datos ?? []).filter((s) => !filtro || s.nombre.toLowerCase().includes(filtro.toLowerCase()));
+  // sedes con cambios respecto a lo guardado (para "Guardar todo")
+  const modificadas = sedes.filter((s) => cols.some(({ t, g }) => { const v = vals[`${s.id}|${g.id}|${t?.id ?? ''}`]; const p = s.parte.find((x) => x.grupo_id === g.id && (x.tiempo_id ?? '') === (t?.id ?? ''))?.cantidad; return (v === '' || v == null ? null : Number(v)) !== (p ?? null); }));
+  const guardarTodo = async () => { for (const s of modificadas) await guardarSede(s); if (modificadas.length) setMsg({ ok: true, t: `${modificadas.length} partes guardados del ${fechaCorta(fecha)}.` }); };
+  const copiarTodas = () => { for (const s of sedes) copiarCupos(s); };
   const totParte = sedes.reduce((a, s) => a + s.parte.reduce((b, p) => b + p.cantidad, 0), 0);
   const totCupo = sedes.reduce((a, s) => a + s.cupos.reduce((b, c) => b + c.cantidad, 0), 0);
   return (
@@ -274,6 +278,7 @@ export function Partes({ contratoId, datos, hoy, unidad, puedeEditar }) {
         <input placeholder="Buscar sede…" value={filtro} onChange={(e) => setFiltro(e.target.value)} />
         <span className="crece" />
         <span className="small"><b>{num(totParte)}</b> en parte · {num(totCupo)} de cupo · {sedes.filter((s) => s.parte.length).length} de {sedes.length} sedes con parte</span>
+        {puedeEditar && <><button className="btn btn-s" onClick={copiarTodas} title="Llenar todas las sedes visibles con su cupo">= cupo en todas</button><button className="btn btn-s btn-p" disabled={!modificadas.length || !!guardando} onClick={guardarTodo}>{guardando ? 'Guardando…' : `Guardar todo${modificadas.length ? ` (${modificadas.length})` : ''}`}</button></>}
       </div>
       <div className="aviso info small mb12">El parte del dia manda sobre el cupo: si hay parte, la programacion y la explosion de ese dia usan el parte; si no, el cupo vigente. Use "= cupo" para arrancar del cupo y corregir lo que cambio.</div>
       {msg && <div className={`aviso ${msg.ok ? 'ok' : 'bad'} mb12`}>{msg.t}</div>}

@@ -262,3 +262,20 @@ Pedido de Osvaldo: una calculadora para negociar volumen (precio por cantidad, i
 Apuntes nuevos para Compras y el tablero:
 - **Tablero de costo por tiempo de comida**: por programa, cuanto cuesta cada tiempo de comida (desayuno, almuerzo, cena, refrigerio; RPS, CAM, CPM, RI) y cada componente, con el mockup "RP" que se entrego como referencia. Depende del master de precios (M3): costo = crudo por racion x precio vigente. Queda para cuando entren los precios; el diseno visual se afina al final.
 - Compras (M3) debe traer: evaluacion y seleccion de proveedores (comparativa de precios y condiciones, cumplimiento, calidad, bloqueos comerciales por morosidad u otra causa), lugar de entrega por sede en la OC (entregas directas de perecederos en carceles grandes), y proveedor "proyecto productivo INPEC" ligado a establecimiento con prioridad contractual.
+
+### 2026-11-05 · Auditoria independiente de la etapa 4D y correcciones (migracion 023, version 0.8.2)
+Informe completo en `docs/auditorias/AUDITORIA_2026-11-05_etapa_4D.md` (1 critico, 5 altos, 9 medios, 11 bajos; seguridad entre empresas cerrada: 23 de 23 funciones rechazan al usuario ajeno; `dia_ciclo` set-based identico al anterior en 9.774 celdas).
+- **C1 (critico) corregido**: el parte diario sumaba al cupo cuando el cupo no tenia variante (caso real de Diestra: COCUC pasaba de 3.587 a 6.587 PPL y las dietas se descontaban dos veces). Ahora `poblacion_dia` deja que el parte mande por grupo y tiempo sin mirar la variante, y los partes se guardan sin variante (la variante es de la sede). Probado: parte de 3.000 reemplaza a 3.587.
+- **A1**: vigencias solapadas. `guardar_cupos`, `guardar_dietas`, `guardar_gramajes` y `asignar_ciclo` cierran la nueva vigencia el dia antes de la siguiente futura; constraints de exclusion (`btree_gist`, `daterange`) en cupos, dietas, gramajes y sede_ciclo para que no vuelva a pasar. Al llegar un cupo por tiempo se cierra el "para todos los tiempos" del mismo grupo.
+- **A2**: el importador exige la modalidad (RPS, CAM, CPM, RI) cuando el contrato reparte cupos por tiempo (PAE o contratos que ya la usan); la pantalla ofrece "modalidad para las filas que no la traen" para hojas que son de una sola modalidad.
+- **A3 / M7**: `calcular_explosion` hace `analyze` al terminar; `sin_receta` sin correlacion (`except`); la pantalla pide el resumen pesado solo al terminar el calculo (`explosion_avance` ligero queda disponible).
+- **A4 / M2**: `marcar_calendario` con parentesis correctos (ya no revienta una jornada de reposicion sobre un dia con novedad) y usa la regla del contrato (USPEC puede marcar un paro de fin de semana); devuelve el total de dias marcados.
+- **A5**: importador reescrito con tablas temporales: cada nombre de sede se resuelve una sola vez y las sumas van en temporal. 2.040 filas: de 4,3 s a 0,08 s (exactas) y de 8,0 s a 0,09 s (por parecido). Tope de 5.000 filas por carga.
+- **M1**: `estado_ciclo('vigente')` exige todas las casillas obligatorias (menus x componentes obligatorios menos los excluidos por la variante) y pasa a historico el vigente anterior de la misma variante.
+- **M3**: la programacion calcula el gramaje de la celda con `crudo_ingrediente` (misma regla que la explosion): se ven los gramajes por grupo guardados en Minutas, con la nota del ajuste.
+- **M4**: grants explicitos a authenticated (y service_role) para las 35 funciones de la etapa; regla agregada al protocolo.
+- **M5**: `minutas_contrato` y `calendario_contrato` aplican `mi_sede` (el administrador de sede ve solo la suya).
+- **M6**: el importador vuelve a previsualizar al cambiar la fecha, la hoja o la modalidad, y arranca con hoy (no con la fecha de consulta).
+- **M8**: partes diarios con "= cupo en todas" y "Guardar todo (n)" para las sedes modificadas.
+- **M9**: Excel de despacho con nombres de hoja unicos (hasta 200 sedes) y el boton dice cuantas hojas trae.
+- Bajos (B1 a B11) y observaciones de diseno quedan en el pendiente; se retoman en el refresh de UI del final.

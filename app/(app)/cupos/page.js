@@ -63,19 +63,23 @@ export default function Cupos() {
       tipo = r0.columnas?.dieta != null ? 'dietas' : 'cupos';   // el archivo manda: si trae columna de dieta, son dietas
       const r = tipo === 'dietas' ? filasDesdeHoja(matriz, 'dietas') : r0;
       if (r.error) { setImp({ tipo, archivo: file.name, hoja, hojas: wb.SheetNames, error: r.error, wb }); return; }
-      const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: tipo, p_filas: r.filas, p_desde: fecha, p_fuente: file.name, p_aplicar: false }));
-      setImp({ tipo, archivo: file.name, hoja, hojas: wb.SheetNames, filas: r.filas, prev, wb, desde: fecha });
+      const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: tipo, p_filas: r.filas, p_desde: hoy, p_fuente: file.name, p_aplicar: false }));
+      setImp({ tipo, archivo: file.name, hoja, hojas: wb.SheetNames, filas: r.filas, prev, wb, desde: hoy, tiempo: '' });
     } catch (e) { setImp({ tipo, archivo: file.name, error: e.message }); }
   };
-  const cambiarHoja = async (hoja) => {
+  // vuelve a previsualizar con otra hoja, otra fecha o una modalidad para todas las filas (cuando el archivo no la trae)
+  const previsualizar = async (cambios) => {
     const XLSX = await import('xlsx');
-    const matriz = XLSX.utils.sheet_to_json(imp.wb.Sheets[hoja], { header: 1, raw: true, defval: null });
+    const st = { ...imp, ...cambios };
+    const matriz = XLSX.utils.sheet_to_json(st.wb.Sheets[st.hoja], { header: 1, raw: true, defval: null });
     const r0 = filasDesdeHoja(matriz, 'cupos');
     const tipo = r0.columnas?.dieta != null ? 'dietas' : 'cupos';
     const r = tipo === 'dietas' ? filasDesdeHoja(matriz, 'dietas') : r0;
-    if (r.error) { setImp({ ...imp, hoja, tipo, error: r.error, filas: null, prev: null }); return; }
-    const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: tipo, p_filas: r.filas, p_desde: imp.desde, p_fuente: imp.archivo, p_aplicar: false }));
-    setImp({ ...imp, hoja, tipo, error: null, filas: r.filas, prev });
+    if (r.error) { setImp({ ...st, tipo, error: r.error, filas: null, prev: null }); return; }
+    const filas = st.tiempo ? r.filas.map((f) => ({ ...f, tiempo: f.tiempo ?? st.tiempo })) : r.filas;
+    setImp({ ...st, tipo, error: null, filas, prev: null, leyendoPrev: true });
+    const prev = await q(sb().rpc('importar_poblacion', { p_contrato: contratoId, p_tipo: tipo, p_filas: filas, p_desde: st.desde, p_fuente: st.archivo, p_aplicar: false }));
+    setImp({ ...st, tipo, error: null, filas, prev, leyendoPrev: false });
   };
   const aplicar = async () => {
     setGuardando(true); setMsg(null);
@@ -137,11 +141,13 @@ export default function Cupos() {
           {imp.leyendo ? <Cargando texto="Leyendo el archivo…" /> : (
             <>
               <div className="row gap10 mb12">
-                {imp.hojas?.length > 1 && <Campo l="Hoja"><select value={imp.hoja} onChange={(e) => cambiarHoja(e.target.value)}>{imp.hojas.map((h) => <option key={h}>{h}</option>)}</select></Campo>}
-                <Campo l="Rige desde (si la fila no trae fecha)"><input type="date" value={imp.desde ?? fecha} onChange={(e) => setImp({ ...imp, desde: e.target.value })} /></Campo>
+                {imp.hojas?.length > 1 && <Campo l="Hoja"><select value={imp.hoja} onChange={(e) => previsualizar({ hoja: e.target.value })}>{imp.hojas.map((h) => <option key={h}>{h}</option>)}</select></Campo>}
+                <Campo l="Rige desde (si la fila no trae fecha)"><input type="date" value={imp.desde ?? hoy} onChange={(e) => previsualizar({ desde: e.target.value })} /></Campo>
+                {imp.tipo === 'cupos' && datos?.tiempos?.length > 0 && <Campo l="Modalidad para las filas que no la traen" ayuda="Si el archivo es una hoja por modalidad (solo RPS, solo RI), eligala aqui"><select value={imp.tiempo ?? ''} onChange={(e) => previsualizar({ tiempo: e.target.value })}><option value="">(la que diga cada fila)</option>{datos.tiempos.map((t) => <option key={t.id} value={t.codigo}>{t.codigo} · {t.nombre}</option>)}</select></Campo>}
               </div>
               {imp.error && <div className="aviso bad mb12">{imp.error}</div>}
-              {imp.prev && (
+              {imp.leyendoPrev && <Cargando texto="Revisando filas…" />}
+              {imp.prev && !imp.leyendoPrev && (
                 <>
                   <div className={`aviso ${imp.prev.con_error ? 'bad' : 'ok'} mb12`}>
                     {imp.prev.ok} filas listas en {imp.prev.sedes} sedes{imp.prev.con_error ? ` · ${imp.prev.con_error} con error (corrija el archivo o la sede en el sistema y vuelva a cargar)` : ' · todo cuadra'}.

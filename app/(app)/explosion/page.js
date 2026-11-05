@@ -141,7 +141,7 @@ function Detalle({ id, progreso, onRecalcular, puede, unidad, setMsg }) {
   const [cat, setCat] = useState('');
   const [prod, setProd] = useState(null);
   const calculando = progreso && !progreso.fin;
-  const r = useCarga(() => q(sb().rpc('explosion_resumen', { p_explosion: id })), [id, progreso?.fin, progreso?.hechos]);
+  const r = useCarga(() => q(sb().rpc('explosion_resumen', { p_explosion: id })), [id, progreso?.fin]);   // el resumen pesado solo al terminar el calculo
   const alertas = useCarga(async () => tab === 'alertas' ? q(sb().rpc('alertas_explosion', { p_explosion: id })) : null, [id, tab, progreso?.fin]);
   const e = r.datos?.explosion;
   const productos = useMemo(() => (r.datos?.productos ?? []).filter((p) => (!cat || p.categoria === cat) && (!filtro || p.nombre.toLowerCase().includes(filtro.toLowerCase()))), [r.datos, cat, filtro]);
@@ -263,9 +263,14 @@ function PorEstablecimiento({ id, e }) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Sede', 'Ciudad', 'Desde', 'Hasta', 'Dias', 'Menus (del - al)', 'Raciones', 'Productos'], ...d.datos.map((s) => [s.sede, s.ciudad, s.desde, s.hasta, s.dias, `${s.menu_desde} - ${s.menu_hasta}`, s.raciones, s.productos.length])]), 'Resumen');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Sede', 'Codigo', 'Producto', 'Categoria', 'Cantidad', 'Unidad', 'Perecedero', 'Desde', 'Hasta', 'Menus'], ...d.datos.flatMap((s) => s.productos.map((p) => [s.sede, p.codigo, p.nombre, p.categoria, p.cantidad_compra, p.unidad_compra, p.perecedero ? 'si' : 'no', s.desde, s.hasta, `${s.menu_desde} - ${s.menu_hasta}`]))]), 'Detalle por sede');
-    for (const s of d.datos.slice(0, 60)) {
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[`Requerimiento ${e.codigo} · ${s.sede}`], [`Del ${s.desde} al ${s.hasta} · menus ${s.menu_desde} al ${s.menu_hasta} · ${s.raciones} raciones`], [], ['Codigo', 'Producto', 'Categoria', 'Cantidad', 'Unidad', 'Perecedero'], ...s.productos.map((p) => [p.codigo, p.nombre, p.categoria, p.cantidad_compra, p.unidad_compra, p.perecedero ? 'si' : 'no'])]), s.sede.replace(/[\\/?*\[\]:]/g, ' ').slice(0, 31));
-    }
+    const usados = new Set(['Resumen', 'Detalle por sede']);
+    d.datos.slice(0, 200).forEach((s, i) => {
+      // nombres de hoja: maximo 31 caracteres y sin repetirse (dos colegios pueden coincidir en los primeros 31)
+      let nombre = s.sede.replace(/[\\/?*\[\]:]/g, ' ').slice(0, 27).trim(); let k = 1; let final = nombre;
+      while (usados.has(final.toLowerCase())) { k += 1; final = `${nombre} (${k})`; }
+      usados.add(final.toLowerCase());
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[`Requerimiento ${e.codigo} · ${s.sede}`], [`Del ${s.desde} al ${s.hasta} · menus ${s.menu_desde} al ${s.menu_hasta} · ${s.raciones} raciones`], [], ['Codigo', 'Producto', 'Categoria', 'Cantidad', 'Unidad', 'Perecedero'], ...s.productos.map((p) => [p.codigo, p.nombre, p.categoria, p.cantidad_compra, p.unidad_compra, p.perecedero ? 'si' : 'no'])]), final);
+    });
     XLSX.writeFile(wb, `Despacho_${e.codigo}.xlsx`);
   };
   if (!d.datos) return <Cargando />;
@@ -273,7 +278,7 @@ function PorEstablecimiento({ id, e }) {
     <>
       <div className="row between mb12 wrap">
         <span className="small muted">Lo que hay que alistar y enviar a cada establecimiento para este periodo, con el tramo de menus que cubre. Es el insumo del picking en bodega (modulo de logistica) y de las entregas directas de proveedor en sede.</span>
-        <button className="btn btn-s" onClick={descargar}>Descargar Excel (una hoja por sede)</button>
+        <button className="btn btn-s" onClick={descargar}>Descargar Excel ({Math.min(d.datos.length, 200)} hojas, una por sede)</button>
       </div>
       <Tabla cols={[
         { t: 'Establecimiento', r: (s) => <><b>{s.sede}</b><div className="small muted">{s.ciudad}</div></> },
