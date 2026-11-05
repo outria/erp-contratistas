@@ -25,6 +25,7 @@ const MENU = [
   { h: '/proveedores', t: 'Proveedores y homologacion', m: ['M3', 'M13'] },
   { h: '/precios', t: 'Master de precios y ofertas', m: ['M3', 'M2'] },
   { h: '/ordenes-compra', t: 'Ordenes de compra', m: 'M3' },
+  { h: '/costos', t: 'Costo por tiempo de comida', m: ['M3', 'M2'] },
   { h: '/portal', t: 'Portal de proveedores', m: 'M4', pronto: true },
   { g: 'Logistica' },
   { h: '/inventario', t: 'Inventario y bodegas', m: 'M5', pronto: true },
