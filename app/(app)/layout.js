@@ -27,6 +27,7 @@ const MENU = [
   { h: '/ordenes-compra', t: 'Ordenes de compra', m: 'M3' },
   { h: '/costos', t: 'Costo por tiempo de comida', m: ['M3', 'M2'] },
   { h: '/cotizaciones', t: 'Solicitudes de cotizacion', m: 'M3' },
+  { h: '/compras-locales', t: 'Compras locales (Ley 2046)', m: ['M3', 'M1'] },
   { h: '/portal', t: 'Portal de proveedores', m: 'M4' },
   { g: 'Logistica' },
   { h: '/inventario', t: 'Inventario y bodegas', m: 'M5', pronto: true },

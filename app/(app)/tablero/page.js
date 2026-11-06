@@ -6,6 +6,7 @@ import { useApp, useCarga } from '@/lib/ctx';
 import { sb, q } from '@/lib/supabase';
 import { Encabezado, Kpi, Cargando, Falla, Consejo } from '@/components/ui';
 import { cop, num, fechaCorta } from '@/lib/fmt';
+import { ResumenComprasLocales } from '@/components/compras-locales';
 
 const FASES = [
   { f: 'F0', t: 'Cimientos: empresas, usuarios, roles, adjuntos', estado: 'en_curso' },
@@ -57,6 +58,12 @@ export default function Tablero() {
               </tr>
             ))}</tbody>
           </table>
+        </div>
+      )}
+      {(puede('M3') || puede('M1')) && (
+        <div className="card mb20">
+          <div className="row between"><h2>Compras publicas locales (Ley 2046)</h2><Link href="/compras-locales" className="small">Ver detalle</Link></div>
+          <ResumenComprasLocales empresaId={empresaId} meses={3} compacto />
         </div>
       )}
       <div className="card">

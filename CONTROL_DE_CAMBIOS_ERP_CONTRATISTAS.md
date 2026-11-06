@@ -363,3 +363,33 @@ Corregido en la migracion 029 y frontend:
 - **Bajos** B1 (funciones revocadas a anon), B4 (contado sin plazo en `generar_oc`), B6 (invitados solo homologados o condicionados y validos), B7 (enlace de precio propuesto), B10 (sin NOTICE). Aviso cuando "solo sin precio" deja la solicitud sin lineas.
 
 Pendiente de la auditoria (bajos): B2 cast de storage con rutas no uuid, B3 mover el cierre al reabrir, B5 IVA como costo en el comparativo, B8 precio de OC distinto al master, B9 lugar de entrega del precio y precios INPEC en el costeo general; UI en celular del comparativo (tarjetas por linea).
+
+## 2026-11-06 · Compras publicas locales por contrato y contratos reales en practica (migracion 030, version 0.13.0)
+
+### Lo que se busco y se encontro (Drive y correo director.compras@fombisol.com.co)
+- **Formato oficial PAE** "Seguimiento compras publicas locales de alimentos vigencia 2026" (correos de Yesid con los contadores de Malambo y Atlantic, y de Maria Camila): hoja `Seguimiento_Compras_de_Alimento` con operador, modelo y modalidad de atencion, complemento, proveedor, tipo, representante legal, factura, fecha, tipo de producto, alimento, especie, cantidad, unidad, valor, proveedor Ley 2046 SI/NO y lugar del productor; hoja `Actualizacion_Carac_Prod_` (caracterizacion del productor). La plataforma lo importa y lo exporta igual (probado con el de UT Malambo septiembre: 237 renglones, $447.691.951, cuadra exacto).
+- **Gobernacion del Atlantico** (correo del 6-oct-2026, contratos 202602581 y 202602582): obligacion 48, compras locales **minimo 30 % del valor total facturado mensualmente**; zona: Atlantico, Magdalena, Bolivar, Cesar, La Guajira, Sucre, Cordoba, San Andres, Cundinamarca, Santander y Norte de Santander; ademas Formato de Demanda Territorial (antes de cada mesa publica y mensual) y reporte mensual; si no se entrega cuenta como incumplimiento en la liquidacion. UT Atlantic se agoto: Zona 2 el 8-sep y Zona 1 el 15-sep-2026; septiembre sigue pendiente para legalizar el informe en SIFWEB.
+- **UT Cenit**: contrato 003-C23-1600-2026 (LP 002-2026, Municipio de Cienaga), $9.261.946.604 con AIU, 64 dias escolares JM/JT y almuerzo, internados 84 dias calendario. Solo la pagina 1 y la resolucion de adjudicacion (correo de Carlos Yepes, 14-oct).
+- **No encontrado**: contrato de UT Altis; contrato de UT Capital USPEC 2025 (el buzon director.compras@capitaluspec.com esta en el Outlook nuevo del computador, que no deja leerse desde aqui); % del rubro de alimentos y puntos adicionales ofrecidos de cada contrato.
+
+### Hecho
+- `contratos`: meta de compras locales (30 %) + adicional ofrecido en la oferta, base de calculo (`rubro_alimentos` o `facturado_total`), % del rubro de alimentos, zona de compras locales, valor de racion de referencia y fuente de cada dato.
+- `terceros`: proveedor Ley 2046 (pequeno productor, ACFC, organizacion), vencimiento del certificado y municipio del productor (`guardar_ley2046_tercero`).
+- `compras_locales_soportes`: soportes del mes (manual, importado del formato oficial u OC), con RLS por empresa y bitacora; una OC con soporte no se suma dos veces.
+- `compras_locales_tablero()`: por contrato y mes, requerido = (meta + adicional) x base; base = facturado x rubro % o facturado total; si el mes no tiene facturado usa el promedio de los ultimos 3 (estimado); cumplimiento, faltante y alertas (falta rubro, falta facturado).
+- Pantalla **Compras locales (Ley 2046)** y tarjeta en el Tablero (mes en curso y dos anteriores): parametros por contrato, soportes, importar y exportar el formato oficial.
+- **Contratos reales en practica** (empresas `UT ... (practica)`, NIT 9000001NN, grupo de practica): UT Capital USPEC 2025 (rubro 72,83 %, promedio nacional Anexo 25, por confirmar), UT Alfa SCJ-1921-2026 ($42.186.012.028, racion $50.407), UT Nutrifood 202604177, UT Atlantic 202602581 y 202602582 (en liquidacion, base facturado total), UT Alianza Integral, UT Malambo, UT Cenit 003-C23-1600-2026, UT Bienestar Corporativo (ARC Covenas), UT Brigadistas SA-005-2026, UT CDR LP-006-2026, UT Altis y UT Proposito Superior SA-008-2026. Los que no tienen valor llevan $1 y "por confirmar". UT Diestra (real) queda con rubro 73,72 % (Anexo 25, grupo 15).
+
+### Decision que hay que confirmar
+- Osvaldo pidio medir sobre el rubro de alimentos (ej. 72 % en USPEC). El contrato del Atlantico dice "30 % del valor total facturado". Por eso la base quedo **por contrato**: Atlantic y Nutrifood sobre el facturado total; los demas sobre el rubro de alimentos hasta que se lea cada clausula.
+
+### Reglas nuevas registradas (por construir)
+1. **Seguimiento de OC en dos tableros.** Compras: del proveedor a la empresa, separando entrega en bodega/CEDI y entrega directa en el establecimiento (el archivo de Bogota los mezcla en "municipios"); el ciclo de una OC termina cuando el proveedor entrega el 100 % a satisfaccion (entradas parciales con su EA, saldo, dias de adelanto o retraso atribuidos a proveedor o logistica). Planeacion: logistica interna (picking, prealistamiento, distribucion y entrega a unidades de servicio) y seguimiento de inventario. La explosion ya es automatica y la maneja Compras; Planeacion conserva la gestion de entregas y ajustes.
+2. **Consumo real diario por unidad de servicio.** Cada unidad reporta lo que consumio; si es menos de lo proyectado (rendimiento, ninos ausentes, etc.) el sobrante queda en inventario de la sede y se descuenta de los siguientes envios y de la siguiente proyeccion de compra.
+3. **Compras locales**: meta por contrato = 30 % + lo ofrecido en la licitacion; pago contra entrega a pequenos productores; demanda territorial mensual para el Atlantico.
+
+### Pendiente
+- Datos por contrato (numero, valor, fechas, rubro %, puntos adicionales, base): mensajes de WhatsApp a los equipos de Bogota y Barranquilla.
+- Cargar el facturado mensual (Contratos > Ejecucion) para que el indicador salga con base real.
+- Marcar en Proveedores los terceros Ley 2046 (pantalla de edicion en la siguiente entrega; ya existe la funcion).
+- Bajos de la auditoria anterior: B2, B3, B5, B8, B9; comparativo en celular.
