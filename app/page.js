@@ -18,7 +18,7 @@ export default function Inicio() {
     return (
       <div className="login">
         <div className="card stack">
-          <h1>Supply ERP</h1>
+          <h1>Ración360</h1>
           <div className="aviso">Falta configurar la conexion a la base de datos. En Vercel, Settings &gt; Environment Variables, cargar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY y volver a desplegar.</div>
         </div>
       </div>

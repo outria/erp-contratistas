@@ -74,7 +74,7 @@ export default function Login() {
       <form className="card stack" onSubmit={enviar}>
         <div className="brand p0">
           <div className="brand-logo">SE</div>
-          <div><b>Supply ERP</b><span className="muted">Contratistas de alimentación del Estado</span></div>
+          <div><b>Ración360</b><span className="muted">Contratistas de alimentación del Estado</span></div>
         </div>
         <h2 className="m0">{modo === 'entrar' ? 'Ingresar' : modo === 'olvido' ? 'Recuperar clave' : 'Crear clave nueva'}</h2>
         {modo !== 'nueva' && (

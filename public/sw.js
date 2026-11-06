@@ -1,4 +1,4 @@
-// Supply ERP · service worker de avisos (v1.65). No guarda nada en cache: solo recibe y abre avisos.
+// Ración360 · service worker de avisos (v1.65). No guarda nada en cache: solo recibe y abre avisos.
 // v1.58: avisos mas llamativos. Vibracion con patron, botones (Abrir / Mas tarde), logo de la empresa si esta cargado,
 // y los importantes (cierre por aprobar, alerta de calidad, OC nueva) se quedan en pantalla hasta que alguien los toque.
 self.addEventListener('install', () => self.skipWaiting());
@@ -11,11 +11,11 @@ const ICONO_TIPO = { cierre: '🔒', calidad: '⚠', oc: '📩', orden: '🏭', 
 
 self.addEventListener('push', (e) => {
   let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch { d = { titulo: 'Supply ERP', cuerpo: e.data ? e.data.text() : '' }; }
+  try { d = e.data ? e.data.json() : {}; } catch { d = { titulo: 'Ración360', cuerpo: e.data ? e.data.text() : '' }; }
   const tipo = d.tipo || String(d.tag || '').split(':')[0] || '';
   const importante = IMPORTANTES.includes(tipo);
   const marca = ICONO_TIPO[tipo];
-  let titulo = d.titulo || 'Supply ERP';
+  let titulo = d.titulo || 'Ración360';
   if (marca && !titulo.startsWith(marca)) titulo = marca + ' ' + titulo;
   e.waitUntil(self.registration.showNotification(titulo, {
     body: d.cuerpo || '',

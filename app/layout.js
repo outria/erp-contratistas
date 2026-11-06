@@ -2,11 +2,11 @@ import './globals.css';
 import { AppProvider } from '@/lib/ctx';
 
 export const metadata = {
-  title: 'Supply ERP',
+  title: 'Ración360',
   description: 'Cadena de suministro para contratistas de alimentacion del Estado (PAE, USPEC, ICBF)',
   manifest: '/manifest.webmanifest',
-  applicationName: 'Supply ERP',
-  appleWebApp: { capable: true, title: 'Supply ERP', statusBarStyle: 'default' },
+  applicationName: 'Ración360',
+  appleWebApp: { capable: true, title: 'Ración360', statusBarStyle: 'default' },
   icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/icon-192.png' },
 };
 

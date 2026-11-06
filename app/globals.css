@@ -1,4 +1,4 @@
-/* Tokens de diseno de Supply ERP. Cambiar la cara de la aplicacion = cambiar este bloque.
+/* Tokens de diseno de Ración360. Cambiar la cara de la aplicacion = cambiar este bloque.
    Los colores de marca de cada empresa (empresas.color_primario / color_acento) se inyectan sobre --primario y --acento al entrar. */
 :root {
   --primario: #1f2a44;        /* barra lateral, botones principales, titulos fuertes */
@@ -155,7 +155,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .info-globo b { color: var(--acento); }
 @media print { .info-i { display: none; } }
 
-/* Supply ERP: pantallas que llegan en fases posteriores */
+/* Ración360: pantallas que llegan en fases posteriores */
 .nav .pronto { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; font-size: 14px; opacity: 0.4; cursor: default; }
 .nav .pronto::after { content: 'pronto'; margin-left: auto; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.9; }
 

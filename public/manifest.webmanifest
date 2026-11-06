@@ -1,6 +1,6 @@
 {
-  "name": "Supply ERP",
-  "short_name": "Supply ERP",
+  "name": "Ración360",
+  "short_name": "Ración360",
   "description": "Cadena de suministro para contratistas de alimentacion del Estado",
   "start_url": "/tablero",
   "scope": "/",

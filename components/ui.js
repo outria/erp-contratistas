@@ -37,7 +37,7 @@ export function Barra({ valor, meta, etiqueta, de = 'de la meta', tope = 1.05 })
   );
 }
 
-// Estados del dominio de Supply ERP (contratos, planeacion, intercambios, explosiones, proveedores...)
+// Estados del dominio de Ración360 (contratos, planeacion, intercambios, explosiones, proveedores...)
 const ESTADOS = {
   // generales
   borrador: '', activo: 'ok', activa: 'ok', vigente: 'ok', inactivo: 'warn', inactiva: 'warn', suspendido: 'warn', suspendida: 'warn', anulado: 'bad', anulada: 'bad', liquidado: 'info', terminado: 'info', pendiente: 'warn',

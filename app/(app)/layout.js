@@ -75,11 +75,11 @@ export default function AppLayout({ children }) {
   const nombre = empresa?.nombre_corto || empresa?.razon_social;
   return (
     <div className="shell">
-      <button className="burger" onClick={() => setAbierto(true)}>☰ <b>Supply ERP</b> <span className="op70">{nombre}</span></button>
+      <button className="burger" onClick={() => setAbierto(true)}>☰ <b>Ración360</b> <span className="op70">{nombre}</span></button>
       <aside className={`side ${abierto ? 'abierto' : ''}`}>
         <div className="brand">
           <div className="brand-logo">SE</div>
-          <div><b>Supply ERP</b><span>cadena de suministro</span></div>
+          <div><b>Ración360</b><span>cadena de suministro</span></div>
         </div>
         {empresas.length > 1 ? (
           <select value={empresaId ?? ''} onChange={(e) => setEmpresaId(e.target.value)} aria-label="Empresa">

@@ -192,7 +192,7 @@ export function DetalleOC({ id, catalogos, puedeCrear, puedeAprobar, onRecargar,
           ]} filas={items} vacio="Sin lineas. Agregue productos o genere la OC desde un requerimiento." />
           <div className="row end gap10 mt12 oc-totales"><div><div className="small muted">Subtotal</div><b>{cop(oc.subtotal)}</b></div><div><div className="small muted">IVA</div><b>{cop(oc.iva)}</b></div><div><div className="small muted">Total</div><b style={{ fontSize: 20 }}>{cop(oc.total)}</b></div></div>
         </div>
-        <div className="small muted mt12 print-only">Generada en Supply ERP · {oc.aprobada_por_nombre ? `Aprobada por ${oc.aprobada_por_nombre}` : 'Borrador, sin aprobar'} · Esta OC no tiene validez sin aprobacion de compras.</div>
+        <div className="small muted mt12 print-only">Generada en Ración360 · {oc.aprobada_por_nombre ? `Aprobada por ${oc.aprobada_por_nombre}` : 'Borrador, sin aprobar'} · Esta OC no tiene validez sin aprobacion de compras.</div>
       </div>
       {item && <FormItem ocId={id} item={item.id ? item : null} catalogos={catalogos} proveedorId={proveedor.id} onCerrar={() => setItem(null)} onGuardado={() => { setItem(null); cargar(); onRecargar?.(); }} />}
       {accion && <Modal titulo={{ confirmar: 'Confirmacion del proveedor', cerrar: 'Cerrar OC', anular: 'Anular OC' }[accion]} onCerrar={() => setAccion(null)}>
