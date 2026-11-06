@@ -23,6 +23,7 @@ export default function Cotizaciones() {
   const tab = params.get('t') ?? 'solicitudes';
   const [nueva, setNueva] = useState(null);   // null | {} | {explosion_id}
   const [msg, setMsg] = useState(null);
+  const [ver, setVer] = useState(0);
   const puedeCrear = puede('M3', 'crear');
   const puedeAprobar = puede('M3', 'aprobar');
   const lista = useCarga(() => q(sb().rpc('solicitudes_lista', { p_empresa: empresaId })), [empresaId]);
@@ -37,7 +38,7 @@ export default function Cotizaciones() {
         {puedeCrear && !id && <button className="btn btn-p" onClick={() => setNueva({})}>Nueva solicitud</button>}
       </Encabezado>
       {msg && <div className={`aviso ${msg.ok ? 'ok' : 'bad'} mb12`}>{msg.t}</div>}
-      {id ? <DetalleSolicitud id={id} puedeCrear={puedeCrear} puedeAprobar={puedeAprobar} onMsg={setMsg} onRecargar={recargar} onEditar={(s) => setNueva(s)} /> : (
+      {id ? <DetalleSolicitud key={`${id}-${ver}`} id={id} puedeCrear={puedeCrear} puedeAprobar={puedeAprobar} onMsg={setMsg} onRecargar={recargar} onEditar={(s) => setNueva(s)} /> : (
         <>
           <Consejo>Una solicitud nace de un <b>requerimiento aprobado</b> (trae las cantidades; puede limitarse a lo que no tiene precio homologado) o a mano. Se invita a los proveedores homologados de esas categorias (o a los que usted elija) y se publica con fecha y hora de cierre. Cada proveedor entra con su cuenta al portal y cotiza linea por linea, con una o varias opciones (marca, empaque, contado o credito, pronto pago). Al cierre, el <b>comparativo</b> muestra todo normalizado y usted adjudica: una linea puede partirse entre dos proveedores. Los proveedores sin cuenta se crean desde su ficha (Usuarios del portal).</Consejo>
           <div className="tabs mb12">
@@ -58,7 +59,7 @@ export default function Cotizaciones() {
           {tab === 'propuestos' && <PreciosPropuestos d={propuestos} puedeAprobar={puedeAprobar} onMsg={setMsg} />}
         </>
       )}
-      {nueva && <FormSolicitud empresaId={empresaId} solicitud={nueva.id ? nueva : null} onCerrar={() => setNueva(null)} onGuardado={(nid) => { setNueva(null); setMsg({ ok: true, t: 'Solicitud guardada en borrador. Revise lineas e invitados y publiquela.' }); recargar(); router.push(`/cotizaciones?id=${nid}`); }} />}
+      {nueva && <FormSolicitud empresaId={empresaId} solicitud={nueva.id ? nueva : null} onCerrar={() => setNueva(null)} onGuardado={(nid) => { setNueva(null); setMsg({ ok: true, t: 'Solicitud guardada en borrador. Revise lineas e invitados y publiquela.' }); recargar(); setVer((v) => v + 1); router.push(`/cotizaciones?id=${nid}`); }} />}
     </>
   );
 }

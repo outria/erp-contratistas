@@ -27,7 +27,7 @@ Fecha: 5-nov-2026. Pedido de Osvaldo: credenciales para los proveedores con sus 
 
 ## 3. Modelo de datos (ya compatible con lo construido en M3)
 - `terceros`, `tercero_documentos`, `tercero_bloqueos`, `tercero_evaluaciones`: ya existen (mig 024).
-- `proveedor_productos` (oferta base: producto x marca x presentacion) y `precios` (vigencia, origen `oferta_portal`): ya existen. Falta agregar a `precios`: `condicion_pago`, `plazo_dias`, `descuento_pronto_pago_pct`, `descuento_pronto_pago_dias`, `minimo_pedido`, `estado` (propuesto / aceptado / rechazado) para las variantes que lleguen del portal.
+- `proveedor_productos` (oferta base: producto x marca x presentacion) y `precios` (vigencia, origen `oferta_portal`, y desde la mig 025: `condicion_pago`, `plazo_dias`, `descuento_pronto_pago_pct`, `descuento_pronto_pago_dias`, `minimo_pedido`, `oferta_linea_id`). Las propuestas del proveedor viven en `precios_propuestos` (tabla aparte, mig 028) para no chocar con la exclusion de vigencias del master; al aceptarlas entran a `precios`.
 - Nuevas en M4: `solicitudes_cotizacion` (cabecera: empresa, origen explosion, fecha cierre, estado, invitados), `solicitud_lineas` (producto maestro, cantidad, unidad, periodo, lugar de entrega), `ofertas` (por proveedor y solicitud, estado enviada / retirada / adjudicada parcial), `oferta_lineas` (variante: linea, proveedor_producto, precio, condicion de pago, plazo, lead time, minimo, vigencia, nota), `adjudicaciones` (linea, variante, cantidad, motivo), `usuarios_proveedor` (perfil -> tercero, empresas a las que atiende), `oc_confirmaciones`, `avisos_despacho`.
 - Comparativo: funcion `comparar_ofertas(solicitud)` que normaliza a precio por unidad de compra, aplica la politica de pago de la empresa (costo efectivo con descuento por pronto pago), muestra calificacion, lead time, bloqueos y prioridad INPEC, y propone la adjudicacion.
 
@@ -38,7 +38,10 @@ Fecha: 5-nov-2026. Pedido de Osvaldo: credenciales para los proveedores con sus 
 4. Al cierre, Compras ve el comparativo normalizado, adjudica (puede partir una linea entre dos proveedores) y el sistema genera las OC y actualiza el master de precios con origen `oferta_portal`.
 5. El proveedor confirma la OC (o propone cambio), manda el aviso de despacho, la bodega recibe (M5), calidad registra (M8), la factura se concilia (M10) y el proveedor ve el estado de pago. Todo alimenta el scorecard.
 
-## 5. Orden de construccion
+## 5. Estado
+Parte 1 construida en la migracion 028 (6-nov-2026): usuarios proveedor y RLS, solicitudes con variantes, comparativo, adjudicacion, precios propuestos, confirmacion de OC, documentos, pantallas /portal y /cotizaciones. Ver control de cambios v0.12.0.
+
+## 6. Orden de construccion
 M3 (ahora): OC con lugar de entrega y sugerencia de proveedor; master de precios con condiciones (variantes). Luego M4: usuarios proveedor y RLS, solicitudes de cotizacion y ofertas con variantes, comparativo y adjudicacion, confirmacion de OC, documentos desde el portal; despues, con M5/M8/M10: aviso de despacho, estado de factura y scorecard transaccional.
 
 Fuentes consultadas: [Syspro Supply Chain Portal](https://www.syspro.com/product/supply-chain-portal/), [Vendor and supplier portals](https://customer-portals.pages.dev/use-cases/vendor-portals/), [Top 10 supplier portal platforms](https://www.rajeshkumar.xyz/blog/?p=1532), [Jaggaer features (G2)](https://www.g2.com/products/jaggaer/features), [SAP Ariba vs Coupa (Jaggaer)](https://www.jaggaer.com/blog/sap-ariba-vs-coupa), [What modern supplier portals must become](https://www.businessprocessincubator.com/content/what-modern-supplier-portals-must-become), [Coupa alternatives 2026](https://www.slash.com/blog/coupa-alternatives), [Supplier portal software for IT leaders](https://technologymatch.com/blog/best-supplier-portal-software-for-it-leaders).
