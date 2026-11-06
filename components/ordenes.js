@@ -25,8 +25,11 @@ export function SugerenciaCompra({ explosionId, puedeCrear, onGenerado, onMsg })
   const [fechaEntrega, setFechaEntrega] = useState('');
   const [soloPendientes, setSoloPendientes] = useState(true);
   const [generando, setGenerando] = useState(false);
-  const cargar = () => { setCargando(true); q(sb().rpc('sugerir_compra', { p_explosion: explosionId })).then((r) => { setD(r); setErr(null); const s = {}; const a = {}; (r.productos ?? []).forEach((p) => { if (p.asignaciones.length && p.ya_en_oc_base < p.requerido_base) s[p.producto_id] = true; a[p.producto_id] = p.asignaciones; }); setSel(s); setAsig(a); }).catch((e) => setErr(e.message)).finally(() => setCargando(false)); };
-  useEffect(cargar, [explosionId]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const [cat, setCat] = useState('');
+  // el servidor manda el reparto por establecimiento compacto ([id, nombre, base]); aqui se expande a una asignacion por sede
+  const expandir = (p) => p.asignaciones.flatMap((a) => a.sedes ? a.sedes.map(([id, nombre, base]) => ({ ...a, sedes: undefined, contrato_sede_id: id, sede: nombre, cantidad_base: base, cantidad: Math.ceil(base / a.contenido) })) : [a]);
+  const cargar = () => { setCargando(true); q(sb().rpc('sugerir_compra', { p_explosion: explosionId, p_categoria: cat || null })).then((r) => { (r.productos ?? []).forEach((p) => { p.asignaciones = expandir(p); }); setD(r); setErr(null); const s = {}; const a = {}; (r.productos ?? []).forEach((p) => { if (p.asignaciones.length && p.ya_en_oc_base < p.requerido_base) s[p.producto_id] = true; a[p.producto_id] = p.asignaciones; }); setSel(s); setAsig(a); }).catch((e) => setErr(e.message)).finally(() => setCargando(false)); };
+  useEffect(cargar, [explosionId, cat]);  // eslint-disable-line react-hooks/exhaustive-deps
   const productos = useMemo(() => (d?.productos ?? []).filter((p) => !soloPendientes || p.ya_en_oc_base < p.requerido_base), [d, soloPendientes]);
   const resumen = useMemo(() => {
     const porProv = {};
@@ -39,7 +42,7 @@ export function SugerenciaCompra({ explosionId, puedeCrear, onGenerado, onMsg })
   const setCantidad = (pid, idx, v) => setAsig((o) => ({ ...o, [pid]: o[pid].map((a, i) => i === idx ? { ...a, cantidad: Number(v) || 0, cantidad_base: (Number(v) || 0) * a.contenido } : a) }));
   const quitar = (pid, idx) => setAsig((o) => ({ ...o, [pid]: o[pid].filter((_, i) => i !== idx) }));
   const cambiarProveedor = (p, idx, alt) => {
-    setAsig((o) => ({ ...o, [p.producto_id]: o[p.producto_id].map((a, i) => i === idx ? { ...a, tercero_id: alt.tercero_id, proveedor: alt.proveedor, pp_id: alt.pp_id, precio_id: alt.precio_id, marca: alt.marca, presentacion: alt.presentacion, unidad_pedido: alt.unidad_pedido, contenido: alt.contenido, precio: alt.precio ?? 0, por_compra: alt.por_compra, iva_pct: alt.iva_pct ?? 0, condicion_pago: alt.condicion_pago, plazo_dias: alt.plazo_dias, lead_time: alt.lead_time, inpec: alt.inpec, motivo: 'manual', cantidad: Math.ceil(a.cantidad_base / alt.contenido), lugar_entrega: alt.entrega_en === 'sede' ? 'sede' : a.lugar_entrega, contrato_sede_id: alt.entrega_en === 'sede' ? (a.contrato_sede_id ?? p.por_sede[0]?.contrato_sede_id) : (alt.entrega_en === 'cedi' ? null : a.contrato_sede_id), sede: alt.entrega_en === 'sede' ? (a.sede ?? p.por_sede[0]?.sede) : (alt.entrega_en === 'cedi' ? null : a.sede) } : a) }));
+    setAsig((o) => ({ ...o, [p.producto_id]: o[p.producto_id].map((a, i) => i === idx ? { ...a, tercero_id: alt.tercero_id, proveedor: alt.proveedor, pp_id: alt.pp_id, precio_id: alt.precio_id, marca: alt.marca, presentacion: alt.presentacion, unidad_pedido: alt.unidad_pedido, contenido: alt.contenido, precio: alt.precio ?? 0, por_compra: alt.por_compra, iva_pct: alt.iva_pct ?? 0, condicion_pago: alt.condicion_pago, plazo_dias: alt.plazo_dias, lead_time: alt.lead_time, inpec: alt.inpec, motivo: 'manual', cantidad: Math.ceil(a.cantidad_base / alt.contenido), lugar_entrega: alt.entrega_en === 'sede' ? 'sede' : a.lugar_entrega, contrato_sede_id: alt.entrega_en === 'sede' ? (a.contrato_sede_id ?? p.primera_sede?.contrato_sede_id) : (alt.entrega_en === 'cedi' ? null : a.contrato_sede_id), sede: alt.entrega_en === 'sede' ? (a.sede ?? p.primera_sede?.sede) : (alt.entrega_en === 'cedi' ? null : a.sede) } : a) }));
     setCambiando(null);
   };
   const generar = async () => {
@@ -71,6 +74,7 @@ export function SugerenciaCompra({ explosionId, puedeCrear, onGenerado, onMsg })
       </div>
       <div className="row gap10 mb12 wrap between">
         <div className="row gap10 wrap">
+          <select value={cat} onChange={(e) => setCat(e.target.value)} title="En contratos con muchas sedes, trabajar por categoria es mas rapido"><option value="">Todas las categorias</option>{(d.categorias ?? []).map((c) => <option key={c} value={c}>{CATEGORIAS[c] ?? c}</option>)}</select>
           <label className="row gap6 small"><input type="checkbox" checked={soloPendientes} onChange={(e) => setSoloPendientes(e.target.checked)} /> Solo lo que falta por comprar</label>
           <button className="btn btn-xs" onClick={() => { const s = {}; productos.forEach((p) => { if ((asig[p.producto_id] ?? []).length) s[p.producto_id] = true; }); setSel(s); }}>Marcar todo</button>
           <button className="btn btn-xs" onClick={() => setSel({})}>Desmarcar</button>
@@ -93,13 +97,13 @@ export function SugerenciaCompra({ explosionId, puedeCrear, onGenerado, onMsg })
                   <td /><td><b>{p.producto}</b><div className="small muted">{CATEGORIAS[p.categoria] ?? p.categoria}{p.perecedero ? ' · perecedero' : ''}</div></td>
                   <td className="n">{num(p.requerido_compra, 2)} {p.unidad_compra}</td><td className="n">{num(p.ya_en_oc_compra, 2)}</td>
                   <td colSpan={5}>{cubierto ? <span className="chip ok">cubierto</span> : p.n_ofertas === 0 ? <span className="chip bad">sin proveedor que lo ofrezca</span> : p.n_elegibles === 0 ? <span className="chip warn">{p.n_ofertas} oferta(s) sin precio vigente, sin homologar o bloqueadas</span> : <span className="chip warn">sin asignacion</span>}</td>
-                  <td>{!cubierto && p.alternativas.length > 0 && puedeCrear && <button className="btn btn-xs" onClick={() => { setAsig((o) => ({ ...o, [p.producto_id]: [{ ...p.alternativas[0], precio: p.alternativas[0].precio ?? 0, cantidad_base: p.requerido_base - p.ya_en_oc_base, cantidad: Math.ceil((p.requerido_base - p.ya_en_oc_base) / p.alternativas[0].contenido), lugar_entrega: p.alternativas[0].entrega_en === 'sede' ? 'sede' : 'cedi', contrato_sede_id: p.alternativas[0].entrega_en === 'sede' ? p.por_sede[0]?.contrato_sede_id : null, sede: p.alternativas[0].entrega_en === 'sede' ? p.por_sede[0]?.sede : null, motivo: 'manual' }] })); setSel((s) => ({ ...s, [p.producto_id]: true })); }}>Asignar a mano</button>}</td>
+                  <td>{!cubierto && p.alternativas.length > 0 && puedeCrear && <button className="btn btn-xs" onClick={() => { setAsig((o) => ({ ...o, [p.producto_id]: [{ ...p.alternativas[0], precio: p.alternativas[0].precio ?? 0, cantidad_base: p.requerido_base - p.ya_en_oc_base, cantidad: Math.ceil((p.requerido_base - p.ya_en_oc_base) / p.alternativas[0].contenido), lugar_entrega: p.alternativas[0].entrega_en === 'sede' ? 'sede' : 'cedi', contrato_sede_id: p.alternativas[0].entrega_en === 'sede' ? p.primera_sede?.contrato_sede_id : null, sede: p.alternativas[0].entrega_en === 'sede' ? p.primera_sede?.sede : null, motivo: 'manual' }] })); setSel((s) => ({ ...s, [p.producto_id]: true })); }}>Asignar a mano</button>}</td>
                 </tr>);
               return as.map((a, idx) => (
                 <tr key={`${p.producto_id}-${idx}`} className={sel[p.producto_id] ? '' : 'apagado'}>
                   <td>{idx === 0 && <input type="checkbox" checked={!!sel[p.producto_id]} onChange={(e) => setSel((s) => ({ ...s, [p.producto_id]: e.target.checked }))} />}</td>
                   <td>{idx === 0 && <><b>{p.producto}</b><div className="small muted">{CATEGORIAS[p.categoria] ?? p.categoria}{p.perecedero ? ' · perecedero' : ''} · {p.n_elegibles} de {p.n_ofertas} ofertas elegibles</div></>}</td>
-                  <td className="n">{idx === 0 && <>{num(p.requerido_compra, 2)} {p.unidad_compra}</>}</td>
+                  <td className="n">{idx === 0 && <>{num(p.requerido_compra, 2)} {p.unidad_compra}{p.ya_en_oc_compra > 0 ? <div className="small muted">pendiente {num(Math.max(p.requerido_compra - p.ya_en_oc_compra, 0), 2)}</div> : null}</>}</td>
                   <td className="n">{idx === 0 && (p.ya_en_oc_compra ? <span className="warn">{num(p.ya_en_oc_compra, 2)}</span> : '·')}</td>
                   <td>{a.proveedor}{a.inpec && <span className="chip info" style={{ marginLeft: 6 }}>INPEC</span>}<div className="small muted">{[a.marca, a.presentacion].filter(Boolean).join(' · ') || `granel (${a.unidad_pedido})`} · <span className={`chip ${MOTIVOS[a.motivo] ?? ''}`}>{a.motivo}</span>{a.condicion_pago ? ` · ${a.condicion_pago}${a.plazo_dias ? ` ${a.plazo_dias} d` : ''}` : ''}{a.lead_time != null ? ` · ${a.lead_time} d` : ''}</div></td>
                   <td className="small">{a.lugar_entrega === 'sede' ? <>directo en <b>{a.sede}</b></> : 'al CEDI'}</td>

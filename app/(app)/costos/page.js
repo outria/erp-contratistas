@@ -79,7 +79,7 @@ export default function Costos() {
             <div className="card">
               <div className="row between mb8 wrap gap6">
                 <div className="tabs m0" style={{ marginBottom: 0 }}><button className={vista === 'tiempos' ? 'on' : ''} onClick={() => setVista('tiempos')}>Menu x tiempo</button><button className={vista === 'componentes' ? 'on' : ''} onClick={() => setVista('componentes')}>Menu x tiempo x componente</button></div>
-                <span className="small muted">{datos.ciclo.codigo} · {datos.ciclo.n_menus} menus · precios del {fechaCorta(datos.fecha)}</span>
+                <span className="small muted">{datos.ciclo.codigo} · {datos.ciclo.n_menus} menus · {datos.sedes_con_ciclo ? `${datos.sedes_con_ciclo} sede(s) con este ciclo` : 'ciclo sin sedes asignadas: raciones de todo el contrato'} · precios del {fechaCorta(datos.fecha)}</span>
               </div>
               <div className="scroll">
                 {vista === 'tiempos' ? (

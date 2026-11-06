@@ -279,7 +279,7 @@ function Ordenes({ ordenes, onMsg, onCambio }) {
   const [conf, setConf] = useState(null);  // {oc, acepta}
   const [fecha, setFecha] = useState(''); const [nota, setNota] = useState(''); const [ocupado, setOcupado] = useState(false);
   const [items, setItems] = useState({});
-  const verItems = async (oc) => { if (items[oc.id]) { setItems((x) => ({ ...x, [oc.id]: null })); return; } const r = await q(sb().from('oc_items').select('descripcion, unidad_pedido, cantidad, precio, iva_pct, total, cantidad_recibida').eq('oc_id', oc.id)); setItems((x) => ({ ...x, [oc.id]: r })); };
+  const verItems = async (oc) => { if (items[oc.id]) { setItems((x) => ({ ...x, [oc.id]: null })); return; } const r = await q(sb().rpc('portal_oc_items', { p_oc: oc.id })); setItems((x) => ({ ...x, [oc.id]: r })); };
   const ejecutar = async () => { setOcupado(true); try { await q(sb().rpc('portal_confirmar_oc', { p_oc: conf.oc.id, p_fecha: fecha || null, p_nota: nota || null, p_acepta: conf.acepta })); onMsg?.({ ok: true, t: conf.acepta ? 'OC confirmada.' : 'Solicitud de cambio enviada a Compras.' }); setConf(null); setFecha(''); setNota(''); onCambio?.(); } catch (e) { onMsg?.({ ok: false, t: e.message }); } finally { setOcupado(false); } };
   return (
     <>
@@ -323,7 +323,7 @@ function Documentos({ docs, empresaId, terceroId, onMsg, onCambio }) {
       const { error } = await sb().storage.from('adjuntos').upload(ruta, f, { contentType: f.type || 'application/octet-stream', upsert: false });
       if (error) throw new Error(error.message);
       await q(sb().rpc('portal_documento', { p_empresa: empresaId, p_codigo: sub.codigo, p_nombre: f.name, p_ruta: ruta, p_tipo_mime: f.type || null, p_tamano: f.size, p_fecha: fecha || null, p_vence: vence || null, p_numero: numero || null }));
-      onMsg?.({ ok: true, t: `${sub.nombre} cargado. Compras lo validara.` }); setSub(null); setVence(''); setNumero(''); onCambio?.();
+      onMsg?.({ ok: true, t: `${sub.nombre} cargado. Queda pendiente hasta que Compras lo valide.` }); setSub(null); setVence(''); setNumero(''); onCambio?.();
     } catch (e) { setErr(e.message); } finally { setOcupado(false); }
   };
   const abrir = async (ruta) => { const { data, error } = await sb().storage.from('adjuntos').createSignedUrl(ruta, 300); if (error) { onMsg?.({ ok: false, t: error.message }); return; } window.open(data.signedUrl, '_blank'); };
@@ -334,6 +334,7 @@ function Documentos({ docs, empresaId, terceroId, onMsg, onCambio }) {
       <div className="card"><Tabla cols={[
         { t: 'Documento', r: (x) => <><b>{x.nombre}</b>{x.obligatorio && <span className="chip warn" style={{ marginLeft: 6 }}>obligatorio</span>}{x.ayuda && <div className="small muted">{x.ayuda}</div>}</> },
         { t: 'Estado', r: (x) => <span className={`chip ${x.estado === 'ok' ? 'ok' : x.estado === 'por_vencer' ? 'warn' : 'bad'}`}>{{ ok: 'al dia', por_vencer: 'por vencer', vencido: 'vencido', falta: 'falta' }[x.estado]}</span> },
+        { t: 'Por validar', r: (x) => x.pendiente ? <span className={`chip ${x.pendiente.estado === 'propuesto' ? 'warn' : x.pendiente.estado === 'rechazado' ? 'bad' : 'ok'}`} title={x.pendiente.nota ?? ''}>{x.pendiente.estado === 'propuesto' ? `subido ${fechaCorta(x.pendiente.subido_en)}` : x.pendiente.estado}{x.pendiente.estado === 'rechazado' && x.pendiente.nota ? `: ${x.pendiente.nota}` : ''}</span> : '·' },
         { t: 'Fecha', r: (x) => x.fecha ? fechaCorta(x.fecha) : '·' }, { t: 'Vence', r: (x) => x.vence ? fechaCorta(x.vence) : (x.fecha ? 'no vence' : '·') }, { t: 'Numero', r: (x) => x.numero ?? '·' },
         { t: '', r: (x) => <span className="row gap4 nowrap">{x.ruta && <button className="btn btn-xs" onClick={() => abrir(x.ruta)}>Ver</button>}<button className="btn btn-xs btn-p" onClick={() => { setSub(x); setFecha(hoyISO()); }}>{x.fecha ? 'Renovar' : 'Subir'}</button></span> },
       ]} filas={docs} idKey="codigo" /></div>

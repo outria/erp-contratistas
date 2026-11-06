@@ -8,7 +8,7 @@ import { useApp, useCarga } from '@/lib/ctx';
 import { sb, q } from '@/lib/supabase';
 import { Encabezado, Cargando, Falla, Consejo, Tabla, Estado } from '@/components/ui';
 import { FormProveedor, FichaProveedor, TIPOS_PROVEEDOR, CATEGORIAS } from '@/components/proveedores';
-import { UsuariosPortal } from '@/components/portal-usuarios';
+import { UsuariosPortal, DocumentosPortal } from '@/components/portal-usuarios';
 import { num, fechaCorta } from '@/lib/fmt';
 
 export default function Proveedores() {
@@ -70,6 +70,7 @@ export default function Proveedores() {
           <Link href="/proveedores" className="btn btn-s mb12">← Todos los proveedores</Link>
           {ficha.err && <Falla msg={ficha.err} />}
           {!ficha.datos ? <Cargando /> : <FichaProveedor ficha={ficha.datos} catalogos={catalogos.datos} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} onRecargar={recargar} onEditar={() => setForm(ficha.datos.tercero)} onMsg={setMsg} />}
+          {ficha.datos && <DocumentosPortal terceroId={id} puedeEditar={puedeEditar} onMsg={setMsg} />}
           {ficha.datos && <UsuariosPortal terceroId={id} puedeEditar={puedeEditar} onMsg={setMsg} />}
         </>
       )}

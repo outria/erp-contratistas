@@ -139,7 +139,7 @@ function DetalleSolicitud({ id, puedeCrear, puedeAprobar, onMsg, onRecargar, onE
     catch (e) { onMsg?.({ ok: false, t: e.message }); } finally { setOcupado(false); }
   };
   const mejorPor = (l) => l.variantes.filter((v) => !v.bloqueado)[0];
-  const puedeAdjudicar = puedeAprobar && ['publicada', 'cerrada'].includes(s.estado);
+  const puedeAdjudicar = puedeAprobar && !s.abierta && ['publicada', 'cerrada'].includes(s.estado);
   return (
     <>
       <div className="row between wrap gap10 mb12">
@@ -163,11 +163,12 @@ function DetalleSolicitud({ id, puedeCrear, puedeAprobar, onMsg, onRecargar, onE
           { t: 'Proveedor', r: (i) => <>{i.proveedor}{i.inpec && <span className="chip info" style={{ marginLeft: 6 }}>INPEC</span>}{i.bloqueado && <span className="chip bad" style={{ marginLeft: 6 }}>bloqueado</span>}<div className="small muted"><Estado e={i.homologacion} />{i.calificacion != null ? ` · ${num(i.calificacion, 1)} pts` : ''}</div></> },
           { t: 'Portal', r: (i) => i.usuarios ? <span className="chip ok">{i.usuarios} usuario(s)</span> : <Link href={`/proveedores?id=${i.tercero_id}`} className="chip warn">sin usuario · crear</Link> },
           { t: 'Vio la solicitud', r: (i) => i.visto_en ? fechaHora(i.visto_en) : <span className="muted">no</span> },
-          { t: 'Oferta', r: (i) => i.oferta_estado ? <><Estado e={i.oferta_estado} /><div className="small muted">{i.lineas_cotizadas} lineas{i.enviada_en ? ` · ${fechaHora(i.enviada_en)}` : ''}{i.validez_hasta ? ` · valida hasta ${fechaCorta(i.validez_hasta)}` : ''}</div></> : <span className="muted">sin oferta</span> },
+          { t: 'Oferta', r: (i) => i.oferta_estado ? <><Estado e={i.oferta_estado} />{i.editada_despues && <span className="chip warn" style={{ marginLeft: 6 }} title={`${i.envios} envio(s) registrados en la bitacora`}>editada despues de enviada</span>}<div className="small muted">{i.lineas_cotizadas} lineas{i.enviada_en ? ` · ${fechaHora(i.enviada_en)}` : ''}{i.validez_hasta ? ` · valida hasta ${fechaCorta(i.validez_hasta)}` : ''}</div></> : <span className="muted">sin oferta</span> },
           { t: 'Observaciones', r: (i) => <span className="small">{i.condiciones ?? '·'}</span> },
         ]} filas={invitados} idKey="tercero_id" />
       </div>
       <div className="card">
+        {s.sellada && <div className="aviso info mb12">Oferta sellada: los precios se ven cuando cierre la solicitud ({fechaHora(s.cierre)}) o cuando la cierre antes con "Cerrar ahora". Mientras tanto solo ve quien la vio y quien envio.</div>}
         <div className="row between wrap gap6 mb8">
           <div><b>Comparativo por linea</b><div className="small muted">Ordenado por costo efectivo por unidad de compra{d.datos.aprovecha_pronto_pago ? ' (aplica el descuento por pronto pago cuando lo ofrecen)' : ''}. Marque la cantidad que adjudica a cada opcion; una linea puede partirse.</div></div>
           {puedeAdjudicar && <div className="row gap6 wrap"><button className="btn btn-xs" onClick={() => { const a = {}; lineas.forEach((l) => { const v = mejorPor(l); if (v && l.adjudicado < l.cantidad) a[l.id] = [{ oferta_linea_id: v.id, cantidad: l.cantidad - l.adjudicado, proveedor: v.proveedor }]; }); setAdj(a); }}>Elegir la mejor de cada linea</button><label className="row gap4 small">Entrega el <input type="date" value={fechaEntrega} onChange={(e) => setFechaEntrega(e.target.value)} /></label><label className="row gap4 small"><input type="checkbox" checked={cerrarAl} onChange={(e) => setCerrarAl(e.target.checked)} /> cerrar la solicitud al adjudicar</label><button className="btn btn-p" disabled={ocupado || !items.length} onClick={adjudicar}>Adjudicar {items.length} opcion(es) · {cop(totalAdj)}</button></div>}

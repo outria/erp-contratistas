@@ -34,3 +34,31 @@ export function UsuariosPortal({ terceroId, puedeEditar, onMsg }) {
     </div>
   );
 }
+
+// A3 · documentos subidos por el proveedor desde el portal: quedan pendientes hasta que Compras los valide
+export function DocumentosPortal({ terceroId, puedeEditar, onMsg }) {
+  const d = useCarga(() => q(sb().rpc('documentos_propuestos_lista', { p_tercero: terceroId })), [terceroId]);
+  const [ocupado, setOcupado] = useState(false);
+  const pendientes = (d.datos ?? []).filter((x) => x.estado === 'propuesto').length;
+  if (!d.datos?.length) return null;
+  const abrir = async (ruta) => { const { data, error } = await sb().storage.from('adjuntos').createSignedUrl(ruta, 300); if (error) { onMsg?.({ ok: false, t: error.message }); return; } window.open(data.signedUrl, '_blank'); };
+  const resolver = async (x, acepta) => {
+    const nota = acepta ? null : window.prompt('Motivo del rechazo (lo vera el proveedor):');
+    if (!acepta && !nota) return;
+    setOcupado(true);
+    try { await q(sb().rpc('resolver_documento_propuesto', { p_id: x.id, p_acepta: acepta, p_nota: nota })); onMsg?.({ ok: true, t: acepta ? `${x.tipo} validado.` : `${x.tipo} rechazado.` }); d.recargar(); }
+    catch (e) { onMsg?.({ ok: false, t: e.message }); } finally { setOcupado(false); }
+  };
+  return (
+    <div className="card mt12">
+      <h3 className="m0 mb8">Documentos subidos por el proveedor{pendientes ? ` (${pendientes} por validar)` : ''}</h3>
+      <p className="small muted">Lo que el proveedor sube en el portal no cuenta hasta que Compras lo revise. Al validarlo, pasa a sus documentos con la fecha y el vencimiento indicados (si el tipo tiene vigencia fija, el vencimiento lo calcula el sistema).</p>
+      <Tabla cols={[
+        { t: 'Documento', r: (x) => <><b>{x.tipo}</b><div className="small muted">{x.archivo} · {x.subido_por ?? 'proveedor'} · {fechaCorta(x.creado_en)}</div></> },
+        { t: 'Fecha', r: (x) => x.fecha ? fechaCorta(x.fecha) : '·' }, { t: 'Vence', r: (x) => x.vence ? fechaCorta(x.vence) : '·' }, { t: 'Numero', r: (x) => x.numero ?? '·' },
+        { t: 'Estado', r: (x) => <span className={`chip ${x.estado === 'propuesto' ? 'warn' : x.estado === 'aceptado' ? 'ok' : 'bad'}`} title={x.nota ?? ''}>{x.estado === 'propuesto' ? 'por validar' : x.estado}</span> },
+        { t: '', r: (x) => <span className="row gap4 nowrap"><button className="btn btn-xs" onClick={() => abrir(x.ruta)}>Ver</button>{x.estado === 'propuesto' && puedeEditar && <><button className="btn btn-xs btn-p" disabled={ocupado} onClick={() => resolver(x, true)}>Validar</button><button className="btn btn-xs" disabled={ocupado} onClick={() => resolver(x, false)}>Rechazar</button></>}</span> },
+      ]} filas={d.datos} />
+    </div>
+  );
+}
