@@ -1,0 +1,36 @@
+'use client';
+// M4 · Usuarios del portal de un proveedor: invitar (correo), ver estado y desactivar. Vive en la ficha del proveedor.
+import { useState } from 'react';
+import { useCarga } from '@/lib/ctx';
+import { sb, q } from '@/lib/supabase';
+import { Tabla, Campo } from '@/components/ui';
+import { fechaCorta } from '@/lib/fmt';
+
+export function UsuariosPortal({ terceroId, puedeEditar, onMsg }) {
+  const d = useCarga(() => q(sb().from('usuarios_proveedor').select('id, correo, nombre, cargo, activo, usuario_id, creado_en').eq('tercero_id', terceroId).order('creado_en')), [terceroId]);
+  const [f, setF] = useState({ correo: '', nombre: '', cargo: '' });
+  const [ocupado, setOcupado] = useState(false);
+  const invitar = async () => {
+    setOcupado(true);
+    try { const r = await q(sb().rpc('invitar_usuario_proveedor', { p_tercero: terceroId, p_correo: f.correo, p_nombre: f.nombre || null, p_cargo: f.cargo || null })); onMsg?.({ ok: r.activo, t: r.mensaje }); setF({ correo: '', nombre: '', cargo: '' }); d.recargar(); }
+    catch (e) { onMsg?.({ ok: false, t: e.message }); } finally { setOcupado(false); }
+  };
+  return (
+    <div className="card mt12">
+      <h3 className="m0 mb8">Usuarios del portal de proveedores</h3>
+      <p className="small muted">Con su cuenta, el proveedor cotiza, propone precios, sube documentos y confirma OC en <b>/portal</b>, viendo solo lo suyo. La cuenta se crea en dos pasos: el administrador la invita en Supabase (Authentication, Invite user, con este correo) y aqui se liga al proveedor; si la cuenta ya existe queda activa de una.</p>
+      <Tabla cols={[
+        { t: 'Correo', r: (u) => <><b>{u.correo}</b><div className="small muted">{[u.nombre, u.cargo].filter(Boolean).join(' · ')}</div></> },
+        { t: 'Estado', r: (u) => !u.activo ? <span className="chip">desactivado</span> : u.usuario_id ? <span className="chip ok">activo</span> : <span className="chip warn">pendiente de cuenta en Auth</span> },
+        { t: 'Desde', r: (u) => fechaCorta(u.creado_en) },
+        { t: '', r: (u) => puedeEditar && u.activo ? <button className="btn btn-xs" onClick={async () => { try { await q(sb().rpc('desactivar_usuario_proveedor', { p_id: u.id })); d.recargar(); } catch (e) { onMsg?.({ ok: false, t: e.message }); } }}>Desactivar</button> : null },
+      ]} filas={d.datos ?? []} vacio="Este proveedor todavia no tiene usuarios del portal." />
+      {puedeEditar && <div className="row gap6 wrap mt12 end">
+        <Campo l="Correo"><input type="email" value={f.correo} onChange={(e) => setF((x) => ({ ...x, correo: e.target.value }))} placeholder="ventas@proveedor.com" /></Campo>
+        <Campo l="Nombre"><input value={f.nombre} onChange={(e) => setF((x) => ({ ...x, nombre: e.target.value }))} /></Campo>
+        <Campo l="Cargo"><input value={f.cargo} onChange={(e) => setF((x) => ({ ...x, cargo: e.target.value }))} /></Campo>
+        <button className="btn btn-p" disabled={ocupado || !f.correo.includes('@')} onClick={invitar}>Invitar / activar</button>
+      </div>}
+    </div>
+  );
+}

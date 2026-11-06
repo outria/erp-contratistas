@@ -26,7 +26,8 @@ const MENU = [
   { h: '/precios', t: 'Master de precios y ofertas', m: ['M3', 'M2'] },
   { h: '/ordenes-compra', t: 'Ordenes de compra', m: 'M3' },
   { h: '/costos', t: 'Costo por tiempo de comida', m: ['M3', 'M2'] },
-  { h: '/portal', t: 'Portal de proveedores', m: 'M4', pronto: true },
+  { h: '/cotizaciones', t: 'Solicitudes de cotizacion', m: 'M3' },
+  { h: '/portal', t: 'Portal de proveedores', m: 'M4' },
   { g: 'Logistica' },
   { h: '/inventario', t: 'Inventario y bodegas', m: 'M5', pronto: true },
   { h: '/traslados', t: 'Traslados y entregas a sedes', m: 'M6', pronto: true },
@@ -44,13 +45,15 @@ const MENU = [
 ];
 
 export default function AppLayout({ children }) {
-  const { sesion, perfil, empresas, empresa, empresaId, setEmpresaId, puede, salir, error } = useApp();
+  const { sesion, perfil, empresas, empresa, empresaId, setEmpresaId, puede, salir, error, rol } = useApp();
   const ruta = usePathname();
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
 
   useEffect(() => { if (sesion === null) router.replace('/login'); }, [sesion, router]);
   useEffect(() => { setAbierto(false); }, [ruta]);
+  // un usuario proveedor solo ve el portal
+  useEffect(() => { if (rol === 'proveedor' && !ruta.startsWith('/portal') && !ruta.startsWith('/mi-cuenta')) router.replace('/portal'); }, [rol, ruta, router]);
 
   if (!supabaseConfigurado()) return <div className="login"><div className="card"><div className="aviso">Falta configurar Supabase en Vercel.</div></div></div>;
   if (!sesion) return <div className="login"><span className="muted">Cargando…</span></div>;

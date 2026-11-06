@@ -308,3 +308,7 @@ input.cambiado { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento
 .t-costos td.incompleta { background: var(--fondo-2); color: var(--suave); }
 .t-costos .trunc { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 .barra-costo { height: 8px; background: var(--fondo-2); border-radius: 4px; overflow: hidden; } .barra-costo span { display: block; height: 100%; background: var(--acento); }
+
+/* M4 · Portal y cotizaciones */
+.t-comparativo tr.apagado td { opacity: 0.55; }
+.t-comparativo input[type=number] { padding: 4px 6px; }
