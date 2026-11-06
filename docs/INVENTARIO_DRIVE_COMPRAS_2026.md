@@ -39,7 +39,7 @@ Fecha: 6-nov-2026. Fuente: carpetas compartidas por comprasinterno57@gmail.com c
 | UT Atlantic | PAE Atlantico grupos 1 y 2 (202602581 y 202602582) | Clausulados, acta, RUT, certificacion bancaria, anexos y lineamientos |
 | UT Alianza Integral | PAE Soledad | contrato PAE2026.pdf, acta, RUT, anexos y lineamientos |
 | UT Malambo | PAE Malambo | CONTRATO.pdf, acta, RUT, anexos y lineamientos |
-| UT Cenit | PAE Cienaga | (en seguimiento semanal e informes locales; contrato no ubicado aun) |
+| UT Cenit | PAE Cienaga | Contrato 003-C23-1600-2026 (LP 002-2026, Municipio de Cienaga), $9.261.946.604; solo pagina 1 y resolucion de adjudicacion (correo 14-oct-2026) |
 | UT Cosecha Atlantico | PAE Atlantico (anterior) | RUT |
 | UT Bienestar Corporativo | Armada ARC Covenas | CONTRATO ARC.pdf, acta, RUT |
 | UT Brigadistas | Bomberos / brigadistas (SA-005-2026) | Clausulado, oferta economica, acta, RUT |
@@ -59,3 +59,9 @@ Fecha: 6-nov-2026. Fuente: carpetas compartidas por comprasinterno57@gmail.com c
 - Contratos de UT Cenit (Cienaga) y UT Altis.
 - Formato del informe de compras locales que exige cada entidad (hay uno en PDF de Diestra; falta el de PAE).
 - Si el porcentaje de compras locales se mide sobre valor facturado, valor de OC o valor pagado, y si es por contrato o consolidado por UT.
+
+## 6. Busqueda en correo (director.compras@fombisol.com.co, 6-nov-2026)
+- Formato oficial PAE de compras locales (hojas Seguimiento_Compras_de_Alimento y Actualizacion_Carac_Prod_): adjunto en "RE: FORMATO COMPRAS LOCALES - SEPTIEMBRE" (UT Malambo) y en los hilos de Maria Camila / Karen Benedetti (UT Atlantic). Septiembre de Atlantic Z1 y Z2 sigue pendiente (correo urgente del 5-nov).
+- Gobernacion del Atlantico (6-oct-2026): obligacion 48, 30 % del valor total facturado mensual; zona costa + Cundinamarca y Santanderes; Formato de Demanda Territorial y Formato de Seguimiento a Compras y Facturas.
+- UT Cenit: pagina 1 del contrato y resolucion RES-DIR-EST-0959-2026.
+- No aparecen: contrato UT Altis, contrato UT Capital USPEC 2025 (buzon capitaluspec en el Outlook nuevo del computador, sin acceso desde aqui), % de rubro de alimentos y puntos adicionales por contrato.
