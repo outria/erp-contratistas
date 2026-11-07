@@ -27,6 +27,7 @@ export default function Requerimientos() {
   const leer = async (file) => {
     setErr(null);
     try {
+      if (file.size > 10 * 1024 * 1024) throw new Error('El archivo pasa de 10 MB.');
       const XLSX = await import('xlsx');
       const wb = XLSX.read(await file.arrayBuffer(), { cellDates: false });
       const hoja = wb.SheetNames.find((n) => !/descuento|embalaje/i.test(n)) ?? wb.SheetNames[0];

@@ -411,3 +411,25 @@ Pendiente de la auditoria (bajos): B2 cast de storage con rutas no uuid, B3 move
 - Del requerimiento a la OC con un clic (hoy la OC sale de la explosion; falta tomarla tambien del requerimiento).
 - Revisar con Planeacion la diferencia del C028 entre "cantidad" y "valor matriz" en cerdo y pechuga.
 - Instituciones educativas de Nutrifood (no vienen en la propuesta; pedir el documento de cobertura).
+
+## 2026-11-06 (noche) · Auditoria de compras locales y correcciones (migracion 033, version 0.14.1)
+
+Auditoria independiente (Opus 5.5) de la migracion 030, la pantalla de compras locales y el cambio de nombre: 0 criticos, 5 altos, 6 medios, 8 bajos (docs/auditorias/AUDITORIA_2026-11-06_compras_locales_030.md).
+
+### Corregido (mig 033 y frontend)
+- A1 tablero de compras locales reescrito con agregados unicos e indice por contrato y fecha: de 65 s a 0,1 s (3 meses) y de 258 s a 0,18 s (12 meses) con 300.000 OC.
+- A2 meta minima 30 % y meta + adicional maximo 100 % (constraint y funcion); el tablero ya no divide por cero.
+- A3 soportes: un soporte amarrado a una OC es solo documentacion (la OC cuenta sola), una OC tiene a lo sumo un soporte y del mismo contrato, no se repiten soportes sueltos, la importacion pasa por `importar_soportes_cl` que descarta repetidos, renglones que ya son OC, sin proveedor o valor, y fechas de otro mes.
+- A4 contratos terminados: el tablero solo cuenta meses entre el inicio y la fecha fin vigente.
+- A5 / B3 `es_practica` solo lo cambia el administrador de la plataforma (trigger) y es la unica definicion de empresa de practica (base y frontend).
+- M1 tablero y soportes exigen Compras o Contratos (ver).
+- M2 proveedor Ley 2046 exige tipo de productor; certificado vencido no cuenta.
+- M3 numeros en formato colombiano (1.500.000) y validacion en el servidor; tope de 10 MB por archivo.
+- M6 `guardar_parametros_cl` valida rangos, permite borrar la fuente y acepta Contratos editar.
+- B1 creado_por lo pone el servidor; B5 "(en curso)" solo en el mes actual y mensaje amable sin la migracion; B7 grants a service_role; B8 logo R360.
+
+### Pendiente
+- M4 OC por fecha de recepcion y por lo recibido (llega con Inventario); IVA homogeneo entre pantalla y exportacion.
+- M5 actualizar SheetJS a 0.20.x (la red del entorno bloquea cdn.sheetjs.com; hacerlo desde un equipo con acceso).
+- B2, B4 (datos reales en empresas de practica: decidir si se dejan), B6.
+- Auditar la migracion 031 (requerimientos) en la siguiente ronda.

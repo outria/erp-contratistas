@@ -24,7 +24,7 @@ function agrupar(filas) {
 
 export function ResumenComprasLocales({ empresaId = null, meses = 3, compacto = false, onElegir, ver = 0 }) {
   const d = useCarga(() => q(sb().rpc('compras_locales_tablero', { p_empresa: empresaId, p_meses: meses })), [empresaId, meses, ver]);
-  if (d.err) return compacto ? <p className="small muted">El indicador aun no esta disponible ({d.err}).</p> : <Falla msg={d.err} />;
+  if (d.err) return compacto ? <p className="small muted">El indicador de compras locales aun no esta disponible para esta empresa.</p> : <Falla msg={d.err} />;
   if (!d.datos) return <Cargando />;
   const filas = d.datos;
   if (!filas.length) return <Vacio>No hay contratos vigentes o en liquidacion para medir.</Vacio>;
@@ -36,7 +36,7 @@ export function ResumenComprasLocales({ empresaId = null, meses = 3, compacto = 
         <thead><tr>
           <th>Contrato</th>
           {!compacto && <th>Meta</th>}
-          {periodos.map((p, i) => <th key={p} className="n">{nombreMes(p)}{i === 0 ? ' (en curso)' : ''}</th>)}
+          {periodos.map((p) => <th key={p} className="n">{nombreMes(p)}{filas.some((f) => f.periodo === p && f.en_curso) ? ' (en curso)' : ''}</th>)}
         </tr></thead>
         <tbody>{grupos.map((g) => (
           <tr key={g.contrato_id} onClick={onElegir ? () => onElegir(g) : undefined} style={onElegir ? { cursor: 'pointer' } : undefined}>
@@ -96,7 +96,7 @@ export function ParametrosCL({ contrato, onCerrar, onGuardado }) {
     setErr(null); setGu(true);
     try {
       await q(sb().rpc('guardar_parametros_cl', { p_contrato: contrato.id, p: {
-        meta_compras_locales_pct: Number(f.meta_compras_locales_pct), meta_compras_locales_extra_pct: Number(f.meta_compras_locales_extra_pct || 0),
+        meta_compras_locales_pct: f.meta_compras_locales_pct === '' ? null : Number(f.meta_compras_locales_pct), meta_compras_locales_extra_pct: f.meta_compras_locales_extra_pct === '' ? 0 : Number(f.meta_compras_locales_extra_pct),
         base_compras_locales: f.base_compras_locales,
         rubro_alimentos_pct: f.rubro_alimentos_pct === '' ? null : Number(f.rubro_alimentos_pct),
         valor_racion_ref: f.valor_racion_ref === '' ? null : Number(f.valor_racion_ref),
@@ -136,6 +136,17 @@ const COLS = [
   ['especie_variedad', 'ESPECIE /VARIEDAD'], ['cantidad', 'CANTIDAD TOTAL COMPRADA'], ['unidad', 'UNIDAD DE MEDIDA'], ['valor', 'VALOR TOTAL COMPRADO (COP $)'],
   ['ley2046', 'PROVEEDOR LEY 2046 (SI / NO)'], ['lugar_productor', 'LUGAR UBICACIÓN PRODUCTOR LOCAL (Plataforma Sec. Agricultura ETC)'],
 ];
+// numero en formato colombiano o de Excel: 1.500.000 / 1500000,5 / 1,500,000.50
+export const numCO = (v) => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  let t = String(v ?? '').trim().replace(/[$\s]/g, '');
+  if (!t || /^[=+@-]/.test(t) && !/^-?[0-9]/.test(t)) return null;
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, '');
+  else t = t.replace(',', '.');
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+};
 const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
 const fechaExcel = (v) => {
   if (v == null || v === '') return null;
@@ -157,13 +168,13 @@ export function leerFormatoOficial(matriz) {
   const filas = [];
   for (const r of matriz.slice(iHead + 1)) {
     if (!r) continue;
-    const prov = r[idx.proveedor_nombre]; const val = Number(String(r[idx.valor] ?? '').replace(/[^0-9.-]/g, ''));
-    if (!prov || !val || /^TOTAL/i.test(String(r[0] ?? ''))) continue;
+    const prov = r[idx.proveedor_nombre]; const val = numCO(r[idx.valor]);
+    if (!prov || !String(prov).trim() || !val || val <= 0 || /^TOTAL/i.test(String(r[0] ?? ''))) continue;
     const g = (k) => (idx[k] == null ? null : r[idx[k]]);
     filas.push({
       proveedor_nombre: String(prov).trim(), tipo_proveedor: g('tipo_proveedor'), factura: g('factura') == null ? null : String(g('factura')),
       fecha_compra: fechaExcel(g('fecha_compra')), tipo_producto: g('tipo_producto'), alimento: g('alimento') == null ? null : String(g('alimento')).trim(),
-      especie_variedad: g('especie_variedad'), cantidad: Number(g('cantidad')) || null, unidad: g('unidad'), valor: val,
+      especie_variedad: g('especie_variedad'), cantidad: numCO(g('cantidad')), unidad: g('unidad'), valor: val,
       ley2046: /^S/i.test(String(g('ley2046') ?? '')), lugar_productor: g('lugar_productor'),
     });
   }
@@ -183,6 +194,7 @@ export function SoportesCL({ contrato, periodo, puedeEditar, onCambio }) {
   const importar = async (file) => {
     setErr(null);
     try {
+      if (file.size > 10 * 1024 * 1024) throw new Error('El archivo pasa de 10 MB.');
       const XLSX = await import('xlsx');
       const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
       const hoja = wb.SheetNames.find((n) => /seguimiento/i.test(n)) ?? wb.SheetNames[0];
@@ -194,9 +206,9 @@ export function SoportesCL({ contrato, periodo, puedeEditar, onCambio }) {
   const aplicar = async () => {
     setErr(null);
     try {
-      const filas = imp.filas.map((f) => ({ ...f, empresa_id: contrato.empresa_id, contrato_id: contrato.id, periodo, origen: 'importado', notas: imp.archivo }));
-      for (let i = 0; i < filas.length; i += 500) await q(sb().from('compras_locales_soportes').insert(filas.slice(i, i + 500)));
+      const res = await q(sb().rpc('importar_soportes_cl', { p_contrato: contrato.id, p_periodo: periodo, p_filas: imp.filas, p_archivo: imp.archivo }));
       setImp(null); refrescar();
+      setErr(`Cargados ${res.cargados}; repetidos ${res.repetidos}; ya estaban como OC ${res.ya_eran_oc}; descartados ${res.descartados} (sin proveedor, valor o con fecha de otro mes).`);
     } catch (e) { setErr(e.message); }
   };
   const borrar = async (id) => {

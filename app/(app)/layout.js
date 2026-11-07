@@ -79,7 +79,7 @@ export default function AppLayout({ children }) {
       <button className="burger" onClick={() => setAbierto(true)}>☰ <b>Ración360</b> <span className="op70">{nombre}</span></button>
       <aside className={`side ${abierto ? 'abierto' : ''}`}>
         <div className="brand">
-          <div className="brand-logo">SE</div>
+          <div className="brand-logo">R360</div>
           <div><b>Ración360</b><span>cadena de suministro</span></div>
         </div>
         {empresas.length > 1 ? (
