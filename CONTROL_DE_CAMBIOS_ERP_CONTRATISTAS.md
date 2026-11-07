@@ -393,3 +393,21 @@ Pendiente de la auditoria (bajos): B2 cast de storage con rutas no uuid, B3 move
 - Cargar el facturado mensual (Contratos > Ejecucion) para que el indicador salga con base real.
 - Marcar en Proveedores los terceros Ley 2046 (pantalla de edicion en la siguiente entrega; ya existe la funcion).
 - Bajos de la auditoria anterior: B2, B3, B5, B8, B9; comparativo en celular.
+
+## 2026-11-06 (noche) · Requerimientos de Planeacion y datos reales de UT Atlantic y UT Nutrifood (migraciones 031 y 032, version 0.14.0)
+
+### Fuentes revisadas
+- **Propuesta UT Atlantic** (zip de 152 MB compartido por Ligia Vidal, Juridica, por OneDrive el 6-nov): ofrecimiento economico por grupo, puntaje adicional de compras locales, SECOP CO1.RPL.5464337. Hallazgos: UT Atlantic ofrecio **+1 % de compras locales en ambos grupos (meta 31 %)**; presupuesto oficial por 74 dias escolares: grupo 1 $15.458.351.756 y grupo 2 $16.905.297.734; cupos diarios por modalidad y grupo etario (A a E): G1 almuerzo en sitio 10.701, transportado 8.632, complemento 814, industrializada 555; G2 13.076, 7.201, 1.494 y 819; valor de racion por grupo etario (almuerzo en sitio de $8.274 grupo A a $11.108 grupo E; transportado $9.342 a $12.268; complemento $6.794 a $7.493; industrializada $8.242 a $11.707); ciclo de 20 menus. El rubro de alimentos dentro de la racion da ~59 % ponderado (almuerzo en sitio 57 a 67 %, transportado 51 a 61 %, complemento ~44 %).
+- **UT Nutrifood** (correo de Karen Benedetti 3-nov y clausulado 202604177): NIT 902.116.853-7; Fombisol 46 %, Corporacion Agrosocial 45 %, ADISP 9 %; LP-0011-2026 grupo 1; $20.018.163.982; 41 dias escolares o hasta agotar, vigente a 31-dic-2026; cobertura 78.074 raciones/dia ($488.247.902/dia); obligacion 48: 30 % del total facturado mensual **+ 1 %** ofrecido; pago a 90 dias; interventoria Consorcio AS Atlantico 2026; intercambios antes de las 10 a. m. del dia anterior. Planeacion RPS: zona 1 16.409 (complemento 5.018, almuerzo 11.391), zona 2 24.742.
+- **Requerimientos de Planeacion** en el correo: codigos por programa (C028 a C030 Nutrifood, C047 a C050 Cenit, C070 a C072 Alianza Integral, C0103 a C0105 Malambo, C0148 y C0173 Grupo 15, C0180 Carceles y URIs CDR/Altis), con actualizaciones, adicionales y cancelaciones; cada uno trae precio de matriz y descuento de inventario.
+
+### Hecho
+- Migracion 031: `requerimientos_planeacion` y `requerimiento_lineas` (versionado por codigo y contrato, tipos planificada / actualizacion / adicional / cancelada, estados recibido / en compra / cubierto / cancelado), `importar_requerimiento` (cruza con el catalogo por nombre normalizado y crea los productos que falten marcados para revision) y `estado_requerimiento`. Escritura solo por funciones; lectura por empresa.
+- Pantalla **Requerimientos de Planeacion**: importa el Excel "NECESIDAD DE COMPRA DE MATERIA PRIMA" tal cual llega (bodega, fecha de envio, ciclo, cobertura, renglones con entrega, dia a consumir, cantidad, descuento de inventario y cantidad a comprar), lista por estado y detalle.
+- Migracion 032 (modo practica): UT Atlantic Z1 y Z2 y UT Nutrifood con valores, meta 31 %, base facturado total y fuentes; requerimientos reales C050 (Cenit, 18 renglones, $185.257.782) y C028 zona 1 (Nutrifood, proteinas, $31.388.400).
+
+### Pendiente
+- Cargar el resto de requerimientos (Alianza, Malambo, Grupo 15, Carceles y URIs, zona 2 de Nutrifood) con el importador; quedan en el correo.
+- Del requerimiento a la OC con un clic (hoy la OC sale de la explosion; falta tomarla tambien del requerimiento).
+- Revisar con Planeacion la diferencia del C028 entre "cantidad" y "valor matriz" en cerdo y pechuga.
+- Instituciones educativas de Nutrifood (no vienen en la propuesta; pedir el documento de cobertura).
