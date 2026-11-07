@@ -433,3 +433,16 @@ Auditoria independiente (Opus 5.5) de la migracion 030, la pantalla de compras l
 - M5 actualizar SheetJS a 0.20.x (la red del entorno bloquea cdn.sheetjs.com; hacerlo desde un equipo con acceso).
 - B2, B4 (datos reales en empresas de practica: decidir si se dejan), B6.
 - Auditar la migracion 031 (requerimientos) en la siguiente ronda.
+
+## 2026-11-06 · Nutrifood real, SECOP II y requerimientos de noviembre (version 0.15.0)
+
+### Hecho
+- Mig 034: UT Nutrifood deja de ser empresa de practica (NIT 902.116.853-7); la ficha provisional vacia queda anulada.
+- Mig 035: datos de SECOP II (datos abiertos, conjunto jbjy-vk9h) en 11 contratos: numero real de Soledad (SG-LP-2026-C003), Bienestar (0013-ARC-ENSUB-DLENS-2026, Escuela Naval de Suboficiales Barranquilla) y Capital (USPEC-CTO-191-2025); procesos, valores y fechas donde estaban de relleno; el resto en notas (Atlantic con adicion del 50 %, Cenit modificado con fin 9-nov).
+- Mig 035: requerimientos vigentes C071 y C070.1 (PAE Soledad), CEI-C027 (CEI Soledad), C0105 (PAE Malambo), CEI-C029 (CEI Malambo) y C050-RPS (Cenit), con las inconsistencias del archivo anotadas en observaciones.
+- Concepto juridico sobre la base de calculo de compras locales (Claude Docs).
+
+### Pendiente
+- Tanda 2 de requerimientos: Grupo 15 (C0073, C0090, C0148, C0173), Carceles/URI (C0182, C0183), Malambo C0104 y C0103, Cenit C049 RI/RPS y C048.
+- Cobertura por grupo etario y gramajes en la programacion (Nutrifood y Soledad).
+- SECOP: el portal pide reCAPTCHA para ver documentos; Malambo y Altis no aparecen en el conjunto de contratos de SECOP II.
